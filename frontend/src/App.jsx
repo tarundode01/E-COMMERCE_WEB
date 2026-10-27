@@ -19,8 +19,22 @@ import AdminOrders from './pages/AdminOrders';
 import AdminCustomers from './pages/AdminCustomers';
 import AdminAnalytics from './pages/AdminAnalytics';
 import AdminSettings from './pages/AdminSettings';
+import AdminVendors from './pages/AdminVendors';
+import VendorRegister from './pages/VendorRegister';
+import VendorDashboard from './pages/VendorDashboard';
+import VendorProducts from './pages/VendorProducts';
+import VendorOrders from './pages/VendorOrders';
+import VendorCategories from './pages/VendorCategories';
+import VendorAnalytics from './pages/VendorAnalytics';
+import VendorSettings from './pages/VendorSettings';
+import VendorDeliveryFleet from './pages/VendorDeliveryFleet';
+import VendorApprovalStatus from './pages/VendorApprovalStatus';
+import DeliveryBoyDashboard from './pages/DeliveryBoyDashboard';
+import OrderTracking from './pages/OrderTracking';
+import PublicStorePage from './pages/PublicStorePage';
 import Categories from './pages/Categories';
 import Footer from './components/Footer';
+import ProtectedRoute from './components/ProtectedRoute';
 import { CartProvider, useCart } from './context/CartContext';
 import { WishlistProvider } from './context/WishlistContext';
 import { AuthProvider } from './context/AuthContext';
@@ -69,11 +83,18 @@ function AppContent() {
   const { addToCart } = useCart();
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith('/admin');
+  const isVendorDashboardRoute =
+    location.pathname.startsWith('/vendor') &&
+    location.pathname !== '/vendor/register' &&
+    location.pathname !== '/vendor/approval-status';
+  const isDeliveryRoute = location.pathname.startsWith('/delivery');
+  const isTrackingRoute = location.pathname.includes('/track');
+  const isDedicatedSaaSRoute = isAdminRoute || isVendorDashboardRoute || isDeliveryRoute || isTrackingRoute;
 
   return (
     <div className="min-h-screen bg-brand-offwhite flex flex-col">
-      {/* Premium Navbar with dynamic live cart count (hidden on admin layout) */}
-      {!isAdminRoute && <Navbar />}
+      {/* Premium Consumer Navbar (hidden on dedicated admin & vendor dashboard SaaS suites) */}
+      {!isDedicatedSaaSRoute && <Navbar />}
 
       {/* Page Routing */}
       <main className="flex-1 flex flex-col">
@@ -135,38 +156,217 @@ function AppContent() {
             path="/my-orders"
             element={<Orders />}
           />
-          {/* Admin Dashboard Routes */}
+          <Route
+            path="/orders/:id/track"
+            element={<OrderTracking />}
+          />
+          <Route
+            path="/track/:id"
+            element={<OrderTracking />}
+          />
+          {/* Vendor SaaS Store Routes */}
+          <Route
+            path="/vendor/register"
+            element={<VendorRegister />}
+          />
+          <Route
+            path="/vendor/dashboard"
+            element={
+              <ProtectedRoute allowedRoles={['vendor', 'admin']}>
+                <VendorDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/vendor"
+            element={
+              <ProtectedRoute allowedRoles={['vendor', 'admin']}>
+                <VendorDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/vendor/products"
+            element={
+              <ProtectedRoute allowedRoles={['vendor', 'admin']}>
+                <VendorProducts />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/vendor/orders"
+            element={
+              <ProtectedRoute allowedRoles={['vendor', 'admin']}>
+                <VendorOrders />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/vendor/categories"
+            element={
+              <ProtectedRoute allowedRoles={['vendor', 'admin']}>
+                <VendorCategories />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/vendor/analytics"
+            element={
+              <ProtectedRoute allowedRoles={['vendor', 'admin']}>
+                <VendorAnalytics />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/vendor/settings"
+            element={
+              <ProtectedRoute allowedRoles={['vendor', 'admin']}>
+                <VendorSettings />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/vendor/delivery-boys"
+            element={
+              <ProtectedRoute allowedRoles={['vendor', 'admin']}>
+                <VendorDeliveryFleet />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/vendor/delivery"
+            element={
+              <ProtectedRoute allowedRoles={['vendor', 'admin']}>
+                <VendorDeliveryFleet />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/vendor/profile"
+            element={
+              <ProtectedRoute allowedRoles={['vendor', 'admin']}>
+                <VendorSettings />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/vendor/approval-status"
+            element={
+              <ProtectedRoute allowedRoles={['vendor', 'admin']}>
+                <VendorApprovalStatus />
+              </ProtectedRoute>
+            }
+          />
+          {/* Delivery Boy Mobile & Web Portal Route */}
+          <Route
+            path="/delivery/dashboard"
+            element={
+              <ProtectedRoute allowedRoles={['delivery_boy', 'vendor', 'admin']}>
+                <DeliveryBoyDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/delivery"
+            element={
+              <ProtectedRoute allowedRoles={['delivery_boy', 'vendor', 'admin']}>
+                <DeliveryBoyDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/delivery-boy/dashboard"
+            element={
+              <ProtectedRoute allowedRoles={['delivery_boy', 'vendor', 'admin']}>
+                <DeliveryBoyDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/delivery-boy"
+            element={
+              <ProtectedRoute allowedRoles={['delivery_boy', 'vendor', 'admin']}>
+                <DeliveryBoyDashboard />
+              </ProtectedRoute>
+            }
+          />
+          {/* Public Storefront Atelier Profile Route */}
+          <Route
+            path="/store/:slug"
+            element={<PublicStorePage />}
+          />
+          {/* Admin Dashboard Routes (Strictly Admin Role Only) */}
           <Route
             path="/admin"
-            element={<AdminDashboard />}
+            element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <AdminDashboard />
+              </ProtectedRoute>
+            }
           />
           <Route
             path="/admin/dashboard"
-            element={<AdminDashboard />}
+            element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <AdminDashboard />
+              </ProtectedRoute>
+            }
           />
           <Route
             path="/admin/products"
-            element={<AdminProducts />}
+            element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <AdminProducts />
+              </ProtectedRoute>
+            }
           />
           <Route
             path="/admin/categories"
-            element={<AdminCategories />}
+            element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <AdminCategories />
+              </ProtectedRoute>
+            }
           />
           <Route
             path="/admin/orders"
-            element={<AdminOrders />}
+            element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <AdminOrders />
+              </ProtectedRoute>
+            }
           />
           <Route
             path="/admin/customers"
-            element={<AdminCustomers />}
+            element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <AdminCustomers />
+              </ProtectedRoute>
+            }
           />
           <Route
             path="/admin/analytics"
-            element={<AdminAnalytics />}
+            element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <AdminAnalytics />
+              </ProtectedRoute>
+            }
           />
           <Route
             path="/admin/settings"
-            element={<AdminSettings />}
+            element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <AdminSettings />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/vendors"
+            element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <AdminVendors />
+              </ProtectedRoute>
+            }
           />
           {/* Fallback to Home */}
           <Route
@@ -181,8 +381,8 @@ function AppContent() {
         </Routes>
       </main>
 
-      {/* Premium Footer (hidden on admin pages) */}
-      {!isAdminRoute && <Footer />}
+      {/* Premium Footer (hidden on dedicated admin & vendor dashboard SaaS suites) */}
+      {!isDedicatedSaaSRoute && <Footer />}
     </div>
   );
 }

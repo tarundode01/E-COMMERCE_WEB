@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import Product from '../models/Product.js';
+import Category from '../models/Category.js';
 
 /**
  * Helper to escape special regex characters safely
@@ -27,7 +28,23 @@ export const getProducts = async (req, res) => {
       inStock,
     } = req.query;
 
-    const filter = {};
+    const filter = {
+      // Exclude draft/unpublished products from public catalog
+      status: { $ne: 'draft' },
+    };
+
+    // Exclude products belonging to unapproved, inactive, or hidden stores
+    const { default: Store } = await import('../models/Store.js');
+    const inactiveStores = await Store.find({
+      $or: [
+        { status: { $ne: 'approved' } },
+        { isPubliclyVisible: false },
+      ],
+    }).select('_id');
+    const inactiveStoreIds = inactiveStores.map((s) => s._id);
+    if (inactiveStoreIds.length > 0) {
+      filter.store = { $nin: inactiveStoreIds };
+    }
 
     // 1. Search filter: Matches product name or description (case-insensitive)
     if (search && typeof search === 'string' && search.trim()) {
@@ -38,17 +55,32 @@ export const getProducts = async (req, res) => {
       ];
     }
 
-    // 2. Category filter: Case-insensitive match, ignore 'All'
+    // 2. Category filter: Case-insensitive match on name or slug, ignore 'All'
     if (
       category &&
       typeof category === 'string' &&
       category.trim() &&
       category.trim().toLowerCase() !== 'all'
     ) {
-      filter.category = {
-        $regex: `^${escapeRegex(category.trim())}$`,
-        $options: 'i',
-      };
+      const cleanCat = category.trim();
+      const matchedCategory = await Category.findOne({
+        $or: [
+          { name: { $regex: `^${escapeRegex(cleanCat)}$`, $options: 'i' } },
+          { slug: cleanCat.toLowerCase() },
+        ],
+      });
+
+      if (matchedCategory) {
+        filter.category = {
+          $regex: `^${escapeRegex(matchedCategory.name)}$`,
+          $options: 'i',
+        };
+      } else {
+        filter.category = {
+          $regex: `^${escapeRegex(cleanCat)}$`,
+          $options: 'i',
+        };
+      }
     }
 
     // 3. Price range filters: minPrice & maxPrice
@@ -107,8 +139,9 @@ export const getProducts = async (req, res) => {
     const total = await Product.countDocuments(filter);
     const totalPages = isFetchAll ? 1 : Math.max(1, Math.ceil(total / parsedLimit));
 
-    // Execute query with filter, sort, skip, and limit
+    // Execute query with filter, sort, skip, limit, and populate store
     const products = await Product.find(filter)
+      .populate('store', 'name slug status isPubliclyVisible')
       .sort(sortOption)
       .skip(skip)
       .limit(parsedLimit);
@@ -154,12 +187,27 @@ export const getProductById = async (req, res) => {
       });
     }
 
-    const product = await Product.findById(id);
+    const product = await Product.findById(id).populate('store', 'name slug status isPubliclyVisible');
 
     if (!product) {
       return res.status(404).json({
         success: false,
         message: `Product not found with ID: ${id}`,
+      });
+    }
+
+    // Customer Catalog Protection: Do not display draft products or products from unapproved stores
+    if (product.status === 'draft') {
+      return res.status(404).json({
+        success: false,
+        message: 'This product is currently in draft mode and not published.',
+      });
+    }
+
+    if (product.store && (product.store.status !== 'approved' || product.store.isPubliclyVisible === false)) {
+      return res.status(404).json({
+        success: false,
+        message: 'This product belongs to an atelier that is currently not active on the marketplace.',
       });
     }
 

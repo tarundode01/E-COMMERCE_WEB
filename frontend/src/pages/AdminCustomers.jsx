@@ -49,7 +49,7 @@ const formatMobile = (phone) => {
  */
 const formatCurrency = (val) => {
   const num = Number(val) || 0;
-  return `$${num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `₹${num.toLocaleString('en-IN')}`;
 };
 
 /**

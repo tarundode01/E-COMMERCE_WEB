@@ -57,6 +57,7 @@ export default function Footer() {
   ];
 
   const supportLinks = [
+    { name: 'Track My Orders', to: '/orders' },
     { name: 'FAQs', to: '/faqs' },
     { name: 'Shipping', to: '/shipping' },
     { name: 'Returns', to: '/returns' },

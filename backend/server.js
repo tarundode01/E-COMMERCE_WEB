@@ -13,6 +13,9 @@ import adminAnalyticsRoutes from './routes/adminAnalyticsRoutes.js';
 import adminSettingsRoutes from './routes/adminSettingsRoutes.js';
 import reviewRoutes from './routes/reviewRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
+import vendorRoutes from './routes/vendorRoutes.js';
+import adminVendorRoutes from './routes/adminVendorRoutes.js';
+import { getPublicStoreBySlug } from './controllers/vendorController.js';
 import StoreSettings from './models/StoreSettings.js';
 
 // Load environment variables
@@ -30,6 +33,7 @@ app.use(express.json());
 
 // Serve secure backend uploads (isolated from frontend source directory)
 app.use('/api/uploads', express.static(path.resolve('uploads')));
+app.use('/uploads', express.static(path.resolve('uploads')));
 
 // Health Check Endpoint
 app.get('/api/health', (req, res) => {
@@ -66,6 +70,15 @@ app.use('/api/admin/customers', adminCustomerRoutes);
 
 // Admin Dedicated Analytics & Telemetry Routes
 app.use('/api/admin/analytics', adminAnalyticsRoutes);
+
+// Vendor Store & Registration Routes (Phase 2 & 4 SaaS functionality)
+app.use('/api/vendor', vendorRoutes);
+
+// Public Storefront Atelier Profile Route
+app.get('/api/stores/:slug', getPublicStoreBySlug);
+
+// Admin Dedicated Vendor Application Review Routes (Phase 3 SaaS functionality)
+app.use('/api/admin/vendors', adminVendorRoutes);
 
 // Public Store Settings (Read-only for storefront, footers, and concierge channels)
 app.get('/api/settings', async (req, res) => {

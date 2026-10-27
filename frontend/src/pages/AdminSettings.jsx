@@ -866,15 +866,14 @@ export default function AdminSettings() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               {/* Standard Shipping Fee */}
               <Input
-                label="Standard Courier Fee ($ USD)"
+                label="Standard Courier Fee (₹ INR)"
                 id="shippingFee"
                 type="number"
                 min="0"
-                step="0.01"
-                placeholder="25.00"
+                step="1"
+                placeholder="100"
                 value={formData.shippingFee}
                 onChange={(e) => handleChange('shippingFee', e.target.value)}
-                icon={DollarSign}
                 error={errors.shippingFee}
                 helperText="Flat-rate insured shipping charged on acquisitions below the complimentary tier."
                 required
@@ -882,12 +881,12 @@ export default function AdminSettings() {
 
               {/* Free-Shipping Threshold */}
               <Input
-                label="Free-Shipping Threshold ($ USD)"
+                label="Free-Shipping Threshold (₹ INR)"
                 id="freeShippingThreshold"
                 type="number"
                 min="0"
-                step="0.01"
-                placeholder="500.00"
+                step="1"
+                placeholder="2000"
                 value={formData.freeShippingThreshold}
                 onChange={(e) => handleChange('freeShippingThreshold', e.target.value)}
                 icon={Sparkles}
@@ -902,15 +901,15 @@ export default function AdminSettings() {
               <span>
                 Active calculation rule: Orders under{' '}
                 <strong className="text-brand-black font-semibold">
-                  ${Number(formData.freeShippingThreshold || 0).toFixed(2)}
+                  ₹{Number(formData.freeShippingThreshold || 0).toLocaleString('en-IN')}
                 </strong>{' '}
                 incur a{' '}
                 <strong className="text-brand-black font-semibold">
-                  ${Number(formData.shippingFee || 0).toFixed(2)}
+                  ₹{Number(formData.shippingFee || 0).toLocaleString('en-IN')}
                 </strong>{' '}
                 courier surcharge. Orders equal to or above{' '}
                 <strong className="text-brand-black font-semibold">
-                  ${Number(formData.freeShippingThreshold || 0).toFixed(2)}
+                  ₹{Number(formData.freeShippingThreshold || 0).toLocaleString('en-IN')}
                 </strong>{' '}
                 qualify for free shipping.
               </span>

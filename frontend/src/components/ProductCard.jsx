@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useInRouterContext } from 'react-router-dom';
-import { Heart, Star, ShoppingBag, Check } from 'lucide-react';
+import { Heart, Star, ShoppingBag, Check, Store } from 'lucide-react';
 import Badge from './Badge';
 import Button from './Button';
 import defaultWatchImg from '../assets/luxury_watch.jpg';
@@ -11,13 +11,14 @@ import lifestyleImg from '../assets/hero_lifestyle.jpg';
 import smartphoneImg from '../assets/luxury_smartphone_titanium.jpg';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
+import { formatImageUrl } from '../utils/imageUrl';
 
 /**
  * Resolves fallback luxury image based on category and title keywords
  */
 const resolveCardImage = (img, category = '', name = '') => {
   if (img && typeof img === 'string' && img.trim() !== '' && !img.includes('undefined')) {
-    return img;
+    return formatImageUrl(img);
   }
   const text = `${category} ${name}`.toLowerCase();
   if (text.includes('mobile') || text.includes('phone') || text.includes('smartphone')) {
@@ -215,6 +216,16 @@ export default function ProductCard({
               {name}
             </h3>
           </SafeLink>
+
+          {/* Seller / Atelier Store Indicator */}
+          {product.store && (
+            <p className="text-[11px] text-brand-muted mt-1 flex items-center gap-1 truncate">
+              <Store size={12} className="text-brand-accent shrink-0" />
+              <span>
+                By <span className="font-semibold text-brand-charcoal">{typeof product.store === 'object' ? product.store.name : product.store}</span>
+              </span>
+            </p>
+          )}
 
           {/* Rating Stars & Reviews */}
           {rating && (

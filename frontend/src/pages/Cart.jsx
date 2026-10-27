@@ -10,7 +10,9 @@ import {
   Lock,
   Truck,
   RotateCcw,
-  X
+  X,
+  AlertTriangle,
+  RefreshCw,
 } from 'lucide-react';
 import Container from '../components/Container';
 import Button from '../components/Button';
@@ -18,20 +20,6 @@ import Badge from '../components/Badge';
 import Input from '../components/Input';
 import { useCart } from '../context/CartContext';
 
-/**
- * Responsive Shopping Cart Page Component
- * Requirements fulfilled:
- * - Display added products with image, name, price, and quantity
- * - Plus and minus buttons to update quantity
- * - Remove button for each product
- * - Automatic calculation of subtotal, shipping, tax, promo, and grand total
- * - "Continue Shopping" button linked to the Shop page (both in empty state and cart view)
- * - "Proceed to Checkout" button linked directly to /checkout
- * - State shared across Shop, Product Details, and Cart via CartContext
- * - LocalStorage persistence on refresh
- * - Clean empty-cart state when no products are present
- * - Uses existing reusable components and luxury theme
- */
 export default function Cart() {
   const {
     cartItems,
@@ -42,6 +30,9 @@ export default function Cart() {
     shipping,
     estimatedTax,
     grandTotal,
+    validationState,
+    syncCartWithServerValidation,
+    validateCartWithBackend,
   } = useCart();
 
   const [promoCode, setPromoCode] = useState('');
@@ -178,9 +169,48 @@ export default function Cart() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
             {/* Left Column: Cart Items (Cols 1-8) */}
             <div className="lg:col-span-8 space-y-4">
+              {/* Validation Warning Alert (if any item has stock or status updates) */}
+              {validationState?.issues?.length > 0 && (
+                <div className="bg-amber-50/90 border border-amber-200 text-amber-950 rounded-xl p-4 sm:p-5 text-left shadow-xs animate-in fade-in">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-2.5">
+                      <AlertTriangle size={18} className="text-amber-700 shrink-0 mt-0.5" />
+                      <div>
+                        <h4 className="text-xs sm:text-sm font-bold text-brand-black">
+                          Inventory & Availability Update
+                        </h4>
+                        <p className="text-xs text-amber-900/90 mt-0.5">
+                          Some items in your luxury cart have real-time stock or catalog changes from the server.
+                        </p>
+                        <ul className="mt-2 space-y-1 text-xs text-amber-950 list-disc list-inside">
+                          {validationState.issues.map((iss, i) => (
+                            <li key={i}>{iss.message}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="xs"
+                      onClick={() => syncCartWithServerValidation()}
+                      icon={RefreshCw}
+                      className="shrink-0 border-amber-300 hover:bg-amber-100 font-semibold"
+                    >
+                      Update Bag
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               <div className="bg-brand-surface border border-brand-border/70 rounded-xl overflow-hidden shadow-xs divide-y divide-brand-border/60">
                 {cartItems.map((item) => {
                   const lineTotal = item.price * item.quantity;
+                  const itemIssue = validationState?.issues?.find(
+                    (iss) =>
+                      (iss.productId === item.id || iss.productId === item._id) &&
+                      (iss.selectedSize === item.selectedSize || !iss.selectedSize)
+                  );
+
                   return (
                     <div
                       key={`${item.id}-${item.selectedSize}`}
@@ -219,6 +249,14 @@ export default function Cart() {
                               <Badge variant="outline" size="sm" className="text-[10px]">
                                 Variant: {item.selectedSize}
                               </Badge>
+                            </div>
+                          )}
+
+                          {/* Item Issue Alert Tag */}
+                          {itemIssue && (
+                            <div className="mt-1.5 inline-flex items-center gap-1.5 text-xs text-rose-700 bg-rose-50 px-2.5 py-0.5 rounded border border-rose-200">
+                              <AlertTriangle size={12} className="text-rose-600 shrink-0" />
+                              <span className="font-medium">{itemIssue.message}</span>
                             </div>
                           )}
 

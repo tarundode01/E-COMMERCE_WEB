@@ -1,5 +1,7 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
+import Store from '../models/Store.js';
+import DeliveryBoy from '../models/DeliveryBoy.js';
 
 /**
  * Generate JSON Web Token
@@ -12,19 +14,32 @@ const generateToken = (userId, email, role = 'user') => {
 };
 
 /**
- * @desc    Register a new user
+ * @desc    Register a new user (Customer, Vendor, or Platform Admin)
  * @route   POST /api/auth/register
  * @access  Public
  */
 export const registerUser = async (req, res) => {
   try {
-    const { name, email, mobile, password } = req.body;
+    const {
+      name,
+      email,
+      mobile,
+      password,
+      role: requestedRole = 'user',
+      adminSecret,
+      storeName,
+      storeDescription,
+      businessAddress,
+      taxId,
+      supportEmail,
+      supportPhone,
+    } = req.body;
 
     // Validate required fields
     const missingFields = [];
     if (!name || !name.trim()) missingFields.push('name');
     if (!email || !email.trim()) missingFields.push('email');
-    if (!mobile || !mobile.trim()) missingFields.push('mobile');
+    if (!mobile || !String(mobile).trim()) missingFields.push('mobile');
     if (!password) missingFields.push('password');
 
     if (missingFields.length > 0) {
@@ -49,7 +64,7 @@ export const registerUser = async (req, res) => {
     }
 
     // Validate mobile number format (minimum 10 digits)
-    const cleanMobile = mobile.replace(/\D/g, '');
+    const cleanMobile = String(mobile).replace(/\D/g, '');
     if (cleanMobile.length < 10) {
       return res.status(400).json({
         success: false,
@@ -79,17 +94,88 @@ export const registerUser = async (req, res) => {
       });
     }
 
-    // Determine role: Allow admin creation via role parameter or admin email pattern
+    // Determine role & authorization
     const adminEmail = (process.env.ADMIN_EMAIL || 'admin@luxury.com').toLowerCase();
-    const role = (req.body.role === 'admin' || normalizedEmail === adminEmail || normalizedEmail.includes('admin'))
-      ? 'admin'
-      : 'user';
+    const validAdminSecret = (process.env.ADMIN_SECRET_KEY || 'luxury_admin_2026').trim();
 
-    // Create user (password is automatically hashed via Mongoose pre-save hook)
+    let role = 'user';
+    if (requestedRole === 'admin') {
+      // Require either matching ADMIN_EMAIL or valid ADMIN_SECRET_KEY
+      if (normalizedEmail === adminEmail || (adminSecret && adminSecret.trim() === validAdminSecret)) {
+        role = 'admin';
+      } else {
+        return res.status(403).json({
+          success: false,
+          message: 'Invalid Admin Security Key. Platform administration privileges require a valid Master Security Key.',
+          errors: { adminSecret: 'Invalid or missing Platform Admin Security Key' },
+        });
+      }
+    } else if (requestedRole === 'vendor') {
+      role = 'vendor';
+    } else {
+      // If user provided adminEmail even with user role requested, grant admin
+      role = (normalizedEmail === adminEmail) ? 'admin' : 'user';
+    }
+
+    // Handle Vendor Account Creation (with Store)
+    if (role === 'vendor') {
+      const actualStoreName = storeName && storeName.trim() ? storeName.trim() : `${name.trim()}'s Atelier`;
+      const actualStoreDescription = storeDescription && storeDescription.trim() ? storeDescription.trim() : 'Artisanal haute luxury boutique and bespoke timepiece atelier.';
+      const actualBusinessAddress = businessAddress && businessAddress.trim() ? businessAddress.trim() : 'Main Luxury Commercial Boulevard';
+
+      const slug = await Store.generateUniqueSlug(actualStoreName);
+
+      const user = await User.create({
+        name: name.trim(),
+        email: normalizedEmail,
+        mobile: cleanMobile,
+        password,
+        role: 'vendor',
+      });
+
+      const store = await Store.create({
+        vendor: user._id,
+        name: actualStoreName,
+        slug,
+        description: actualStoreDescription,
+        businessAddress: actualBusinessAddress,
+        taxId: taxId ? taxId.trim() : '',
+        supportEmail: supportEmail ? supportEmail.trim().toLowerCase() : normalizedEmail,
+        supportPhone: supportPhone ? String(supportPhone).trim() : cleanMobile,
+        status: 'pending',
+      });
+
+      const token = generateToken(user._id, user.email, user.role);
+
+      return res.status(201).json({
+        success: true,
+        message: 'Vendor account and atelier registered successfully. Awaiting administrative review.',
+        token,
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          mobile: user.mobile,
+          role: user.role,
+          createdAt: user.createdAt,
+        },
+        store: {
+          id: store._id,
+          name: store.name,
+          slug: store.slug,
+          description: store.description,
+          businessAddress: store.businessAddress,
+          status: store.status,
+          createdAt: store.createdAt,
+        },
+      });
+    }
+
+    // Create user (user or admin)
     const user = await User.create({
       name: name.trim(),
       email: normalizedEmail,
-      mobile: mobile.trim(),
+      mobile: cleanMobile,
       password,
       role,
     });
@@ -100,7 +186,7 @@ export const registerUser = async (req, res) => {
     // Return response without password or password hash
     return res.status(201).json({
       success: true,
-      message: 'User registered successfully',
+      message: role === 'admin' ? 'Platform Administrator account initialized successfully.' : 'User registered successfully',
       token,
       user: {
         id: user._id,
@@ -165,8 +251,58 @@ export const loginUser = async (req, res) => {
     // Find user by email
     const user = await User.findOne({ email: normalizedEmail });
 
-    // Safely check if user exists and password matches without revealing specific error
+    // If not a standard user, check if this is a vendor-created Delivery Agent account
     if (!user) {
+      const deliveryBoy = await DeliveryBoy.findOne({ email: normalizedEmail });
+      if (deliveryBoy) {
+        const isMatch = await deliveryBoy.matchPassword(password);
+        if (!isMatch) {
+          return res.status(401).json({
+            success: false,
+            message: 'Invalid email or password credentials',
+          });
+        }
+
+        if (deliveryBoy.status === 'inactive') {
+          return res.status(403).json({
+            success: false,
+            message: 'Your delivery agent account has been deactivated by your store vendor.',
+            accountStatus: 'inactive',
+          });
+        }
+
+        const store = await Store.findById(deliveryBoy.store);
+        const token = generateToken(deliveryBoy._id, deliveryBoy.email, 'delivery_boy');
+
+        return res.status(200).json({
+          success: true,
+          message: 'Delivery Agent login successful',
+          token,
+          user: {
+            id: deliveryBoy._id,
+            _id: deliveryBoy._id,
+            name: deliveryBoy.name,
+            email: deliveryBoy.email,
+            mobile: deliveryBoy.phone,
+            role: 'delivery_boy',
+            status: deliveryBoy.status,
+            vehicleType: deliveryBoy.vehicleType,
+            vehicleNumber: deliveryBoy.vehicleNumber,
+            storeName: store?.name || 'Artisanal Boutique',
+          },
+          deliveryAgent: {
+            id: deliveryBoy._id,
+            vendorId: deliveryBoy.vendor,
+            storeId: deliveryBoy.store,
+            storeName: store?.name || 'Artisanal Boutique',
+            status: deliveryBoy.status,
+            vehicleType: deliveryBoy.vehicleType,
+            vehicleNumber: deliveryBoy.vehicleNumber,
+            currentLocation: deliveryBoy.currentLocation,
+          },
+        });
+      }
+
       return res.status(401).json({
         success: false,
         message: 'Invalid email or password credentials',
@@ -181,11 +317,38 @@ export const loginUser = async (req, res) => {
       });
     }
 
+    // Check if user account is suspended or inactive
+    if (user.status === 'suspended' || user.status === 'inactive' || user.isActive === false) {
+      return res.status(403).json({
+        success: false,
+        message: 'Your account has been suspended or deactivated. Please contact administration support.',
+        accountStatus: user.status || 'inactive',
+      });
+    }
+
     // Ensure admin email automatically has admin role if not set
     const adminEmail = (process.env.ADMIN_EMAIL || 'admin@luxury.com').toLowerCase();
     if (user.email === adminEmail && user.role !== 'admin') {
       user.role = 'admin';
       await user.save();
+    }
+
+    // Fetch vendor store information if user is a vendor
+    let storeData = null;
+    if (user.role === 'vendor') {
+      const { default: Store } = await import('../models/Store.js');
+      const store = await Store.findOne({ vendor: user._id });
+      if (store) {
+        storeData = {
+          id: store._id,
+          name: store.name,
+          slug: store.slug,
+          status: store.status,
+          logoUrl: store.logoUrl || null,
+          bannerUrl: store.bannerUrl || null,
+          rejectionReason: store.rejectionReason || null,
+        };
+      }
     }
 
     // Generate JWT token
@@ -202,8 +365,10 @@ export const loginUser = async (req, res) => {
         email: user.email,
         mobile: user.mobile,
         role: user.role || 'user',
+        status: user.status || 'active',
         createdAt: user.createdAt,
       },
+      store: storeData,
     });
   } catch (error) {
     console.error('Login Error:', error);
@@ -225,16 +390,36 @@ export const getUserProfile = async (req, res) => {
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
+
+    // Fetch vendor store information if applicable
+    let storeData = null;
+    if (user.role === 'vendor') {
+      const { default: Store } = await import('../models/Store.js');
+      const store = await Store.findOne({ vendor: user._id });
+      if (store) {
+        storeData = {
+          id: store._id,
+          name: store.name,
+          slug: store.slug,
+          status: store.status,
+          rejectionReason: store.rejectionReason || null,
+        };
+      }
+    }
+
     return res.status(200).json({
       success: true,
+      token: generateToken(user._id, user.email, user.role),
       user: {
         id: user._id,
         name: user.name,
         email: user.email,
         mobile: user.mobile,
         role: user.role,
+        status: user.status || 'active',
         createdAt: user.createdAt,
       },
+      store: storeData,
     });
   } catch (error) {
     console.error('Error fetching profile:', error);

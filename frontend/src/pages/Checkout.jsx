@@ -73,13 +73,16 @@ export default function Checkout() {
         const itemsPayload = cartItems.map((item) => ({
           productId: item._id || item.id,
           quantity: Number(item.quantity) || 1,
+          selectedSize: item.selectedSize || 'Standard',
         }));
 
-        const res = await orderService.calculateShipping({ items: itemsPayload });
+        const res = await orderService.validateCart({ items: itemsPayload });
 
         if (!active) return;
 
         if (res && res.success) {
+          const issues = (res.items || []).filter((it) => it.available === false || it.issue);
+
           setBackendTotals({
             subtotal: Number(res.subtotal) || 0,
             shippingFee: Number(res.shippingFee) || 0,
@@ -88,14 +91,24 @@ export default function Checkout() {
             amountToFreeShipping: Number(res.amountToFreeShipping) || 0,
             taxPrice: Number(res.taxPrice) || 0,
             totalAmount: Number(res.totalAmount) || 0,
+            isValid: Boolean(res.isValid),
+            items: res.items || [],
+            issues,
           });
-          setShippingError(null);
+
+          if (!res.isValid && issues.length > 0) {
+            setShippingError(
+              `Some items in your cart require attention: ${issues.map((i) => i.message).join(' ')}`
+            );
+          } else {
+            setShippingError(null);
+          }
         } else {
           throw new Error(res?.message || 'Server did not return verified financial calculations.');
         }
       } catch (err) {
         if (!active) return;
-        console.error('Failed to calculate shipping from backend:', err);
+        console.error('Failed to validate cart financials from backend:', err);
         const errorMsg =
           err.response?.data?.message ||
           err.message ||
@@ -423,6 +436,24 @@ export default function Checkout() {
       return;
     }
 
+    // Check if any cart item has availability/stock issues
+    if (backendTotals.isValid === false) {
+      setApiError(
+        'Some items in your cart are currently out of stock or unavailable. Please return to your shopping bag to adjust.'
+      );
+      window.scrollTo({ top: 120, behavior: 'smooth' });
+      return;
+    }
+
+    // COD eligibility check (Max $3,000)
+    if (paymentMethod === 'cod' && backendTotals.totalAmount > 3000) {
+      setApiError(
+        `Cash on Delivery is limited to orders up to $3,000. Your order total is $${backendTotals.totalAmount.toLocaleString()}. Please select Online Payment.`
+      );
+      window.scrollTo({ top: 120, behavior: 'smooth' });
+      return;
+    }
+
     // Prevent duplicate submissions while in-flight
     if (isSubmitting) return;
     setIsSubmitting(true);
@@ -461,6 +492,8 @@ export default function Checkout() {
 
     // Prepare verified payload
     // Trust rule: Do not send frontend prices or totals; backend calculates trusted database financials
+    const idempotencyKey = `idemp-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+
     const orderPayload = {
       products: cartItems.map((item) => ({
         productId: item._id || item.id,
@@ -480,10 +513,11 @@ export default function Checkout() {
         paymentMethod === 'online'
           ? 'Online Payment'
           : 'Cash on Delivery (COD)',
+      idempotencyKey,
     };
 
     try {
-      const response = await orderService.createOrder(orderPayload);
+      const response = await orderService.createOrder(orderPayload, idempotencyKey);
 
       if (response && response.success && response.order) {
         // Clear cart on verified order creation

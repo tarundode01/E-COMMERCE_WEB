@@ -1,9 +1,11 @@
 import express from 'express';
 import {
   createOrder,
+  validateCart,
   calculateOrderShipping,
   getMyOrders,
   getOrderById,
+  getOrderTracking,
   cancelOrder,
   getAllOrdersAdmin,
   updateOrderStatus,
@@ -11,6 +13,12 @@ import {
 import { protect, admin } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
+
+// @route   POST /api/orders/validate-cart
+// @desc    Revalidate customer cart items against real MongoDB products & store status
+// @access  Public / Customer
+router.post('/validate-cart', validateCart);
+router.post('/validate', validateCart);
 
 // @route   POST /api/orders/calculate-shipping
 // @desc    Calculate verified shipping fee, subtotal, and total from trusted catalog prices
@@ -35,11 +43,17 @@ router.get('/', admin, getAllOrdersAdmin);
 // @desc    Fetch authenticated customer's order history
 // @access  Private
 router.get('/my-orders', getMyOrders);
+router.get('/myorders', getMyOrders);
 
 // @route   GET /api/orders/:id
 // @desc    Fetch single order details (owner or admin only)
 // @access  Private
 router.get('/:id', getOrderById);
+
+// @route   GET /api/orders/:id/track
+// @desc    Fetch real-time delivery tracking and telemetry for order
+// @access  Private
+router.get('/:id/track', getOrderTracking);
 
 // @route   PATCH /api/orders/:id/cancel
 // @desc    Cancel an order (owner or admin only)

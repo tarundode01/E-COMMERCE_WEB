@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
+import { orderService } from '../services/api';
 
 const CartContext = createContext();
 
@@ -29,6 +30,17 @@ export function CartProvider({ children }) {
     return [];
   });
 
+  // Server-side authoritative validation state
+  const [validationState, setValidationState] = useState({
+    isValid: true,
+    isRevalidating: false,
+    lastValidatedAt: null,
+    items: [],
+    issues: [],
+    serverTotals: null,
+    error: null,
+  });
+
   // Sync to localStorage on every change
   useEffect(() => {
     try {
@@ -38,6 +50,131 @@ export function CartProvider({ children }) {
     }
   }, [cartItems]);
 
+  // Revalidate cart items with real MongoDB product data from backend
+  const validateCartWithBackend = useCallback(async () => {
+    if (!cartItems || cartItems.length === 0) {
+      setValidationState({
+        isValid: true,
+        isRevalidating: false,
+        lastValidatedAt: new Date(),
+        items: [],
+        issues: [],
+        serverTotals: null,
+        error: null,
+      });
+      return { isValid: true, items: [] };
+    }
+
+    setValidationState((prev) => ({ ...prev, isRevalidating: true, error: null }));
+
+    try {
+      const payload = {
+        items: cartItems.map((item) => ({
+          productId: item._id || item.id,
+          quantity: Number(item.quantity) || 1,
+          selectedSize: item.selectedSize || 'Standard',
+        })),
+      };
+
+      const res = await orderService.validateCart(payload);
+
+      if (res && res.success) {
+        const issues = (res.items || []).filter((it) => it.available === false || it.issue);
+
+        setValidationState({
+          isValid: Boolean(res.isValid),
+          isRevalidating: false,
+          lastValidatedAt: new Date(),
+          items: res.items || [],
+          issues,
+          serverTotals: {
+            subtotal: res.subtotal,
+            shippingFee: res.shippingFee,
+            freeShippingThreshold: res.freeShippingThreshold,
+            isFreeShipping: res.isFreeShipping,
+            taxPrice: res.taxPrice,
+            totalAmount: res.totalAmount,
+          },
+          error: null,
+        });
+
+        return res;
+      } else {
+        throw new Error(res?.message || 'Cart validation failed');
+      }
+    } catch (err) {
+      console.warn('Backend cart revalidation check failed:', err.message);
+      setValidationState((prev) => ({
+        ...prev,
+        isRevalidating: false,
+        error: err.message || 'Cart validation check unavailable',
+      }));
+      return null;
+    }
+  }, [cartItems]);
+
+  // Debounced auto-revalidation whenever cart items change
+  useEffect(() => {
+    let active = true;
+    const timer = setTimeout(() => {
+      if (active && cartItems.length > 0) {
+        validateCartWithBackend();
+      }
+    }, 400);
+
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [cartItems, validateCartWithBackend]);
+
+  // Automatically update local cart with verified server prices and prune unavailable items if requested
+  const syncCartWithServerValidation = useCallback((validatedResult) => {
+    const verifiedItems = validatedResult?.items || validationState.items;
+    if (!Array.isArray(verifiedItems) || verifiedItems.length === 0) return;
+
+    setCartItems((prevItems) => {
+      const nextItems = [];
+
+      for (const item of prevItems) {
+        const prodId = item._id || item.id;
+        const verified = verifiedItems.find(
+          (v) => (v.productId === prodId || v.id === prodId) && v.selectedSize === item.selectedSize
+        );
+
+        // If product is deleted, unpublished, or store inactive: omit
+        if (verified && (verified.issue === 'deleted' || verified.issue === 'unpublished' || verified.issue === 'store_inactive')) {
+          continue;
+        }
+
+        // If out of stock: omit or retain with 0? omit from active cart
+        if (verified && verified.issue === 'out_of_stock') {
+          continue;
+        }
+
+        // If available or insufficient stock: update price and adjust quantity if needed
+        if (verified) {
+          const trustedPrice = typeof verified.price === 'number' ? verified.price : item.price;
+          const adjustedQty =
+            verified.availableQuantity > 0
+              ? Math.min(item.quantity, verified.availableQuantity)
+              : item.quantity;
+
+          nextItems.push({
+            ...item,
+            price: trustedPrice,
+            quantity: adjustedQty,
+            store: verified.store || item.store,
+          });
+        } else {
+          nextItems.push(item);
+        }
+      }
+
+      return nextItems;
+    });
+  }, [validationState.items]);
+
   // Add product to cart (or increment quantity if already present with same size)
   const addToCart = (product, quantityToAdd, size = null) => {
     if (!product) return;
@@ -45,7 +182,6 @@ export function CartProvider({ children }) {
     const prodId = product._id || product.id;
     if (!prodId) return;
 
-    // Support both addToCart(product, quantityToAdd, size) and addToCart({ ...product, quantity, selectedSize })
     const qty =
       typeof quantityToAdd === 'number'
         ? quantityToAdd
@@ -88,6 +224,7 @@ export function CartProvider({ children }) {
           originalPrice: product.originalPrice ? parsePrice(product.originalPrice) : null,
           image: product.image,
           selectedSize: chosenSize,
+          store: product.store || null,
           quantity: Math.min(10, Math.max(1, qty)),
         },
       ];
@@ -130,9 +267,18 @@ export function CartProvider({ children }) {
   // Clear all items
   const clearCart = () => {
     setCartItems([]);
+    setValidationState({
+      isValid: true,
+      isRevalidating: false,
+      lastValidatedAt: new Date(),
+      items: [],
+      issues: [],
+      serverTotals: null,
+      error: null,
+    });
   };
 
-  // Live Totals calculations
+  // Live Totals calculations (Client estimate; backend totals remain authoritative at checkout)
   const { cartCount, subtotal, shipping, estimatedTax, grandTotal } = useMemo(() => {
     const count = cartItems.reduce((acc, item) => acc + (Number(item.quantity) || 0), 0);
     const sub = cartItems.reduce((acc, item) => {
@@ -141,9 +287,9 @@ export function CartProvider({ children }) {
       return acc + p * q;
     }, 0);
 
-    const ship = sub === 0 ? 0 : sub >= 200 ? 0 : 25;
-    const tax = Math.round(sub * 0.08); // 8% estimated luxury sales/import tax
-    const total = sub + ship + tax;
+    const ship = sub === 0 ? 0 : sub >= 500 ? 0 : 25;
+    const tax = Math.round(sub * 0.08 * 100) / 100;
+    const total = Math.round((sub + ship + tax) * 100) / 100;
 
     return {
       cartCount: count,
@@ -165,6 +311,10 @@ export function CartProvider({ children }) {
     shipping,
     estimatedTax,
     grandTotal,
+    // Authoritative backend validation
+    validationState,
+    validateCartWithBackend,
+    syncCartWithServerValidation,
   };
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

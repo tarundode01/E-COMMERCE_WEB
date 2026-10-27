@@ -64,6 +64,46 @@ const productSchema = new mongoose.Schema(
       default: 0,
       min: [0, 'Number of reviews cannot be negative'],
     },
+    // SaaS Multi-Tenant & Vendor Management Fields
+    store: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Store',
+      index: true,
+      default: null,
+    },
+    vendor: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      index: true,
+      default: null,
+    },
+    slug: {
+      type: String,
+      lowercase: true,
+      trim: true,
+      index: true,
+    },
+    sku: {
+      type: String,
+      uppercase: true,
+      trim: true,
+    },
+    images: {
+      type: [String],
+      default: [],
+    },
+    discount: {
+      type: Number,
+      default: 0,
+      min: [0, 'Discount cannot be negative'],
+      max: [100, 'Discount cannot exceed 100%'],
+    },
+    status: {
+      type: String,
+      enum: ['draft', 'published', 'archived'],
+      default: 'published',
+      index: true,
+    },
   },
   {
     timestamps: true, // Automatically manages createdAt and updatedAt
@@ -72,7 +112,44 @@ const productSchema = new mongoose.Schema(
 
 // Database indexes for fast querying, filtering, and sorting
 productSchema.index({ category: 1, price: 1, rating: -1, createdAt: -1 });
+productSchema.index({ store: 1, status: 1 });
+productSchema.index({ sku: 1 }, { unique: true, sparse: true });
 productSchema.index({ name: 'text', description: 'text' });
+
+/**
+ * Generate a URL-friendly unique slug from product name
+ */
+productSchema.statics.generateUniqueSlug = async function (productName, storeId = null, existingId = null) {
+  let baseSlug = productName
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/[\s_-]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
+  if (!baseSlug) {
+    baseSlug = 'product';
+  }
+
+  let slug = baseSlug;
+  let counter = 1;
+
+  while (true) {
+    const query = { slug };
+    if (storeId) {
+      query.store = storeId;
+    }
+    if (existingId) {
+      query._id = { $ne: existingId };
+    }
+    const existing = await this.findOne(query);
+    if (!existing) {
+      return slug;
+    }
+    slug = `${baseSlug}-${counter}`;
+    counter++;
+  }
+};
 
 // Format JSON response to include virtual id and remove internal fields
 productSchema.methods.toJSON = function () {

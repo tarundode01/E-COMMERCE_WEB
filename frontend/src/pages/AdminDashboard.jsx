@@ -4,7 +4,6 @@ import {
   Package,
   ShoppingBag,
   Users,
-  DollarSign,
   TrendingUp,
   Search,
   Eye,
@@ -16,18 +15,19 @@ import {
   Clock,
   Truck,
   XCircle,
-  HelpCircle,
   ShieldCheck,
   AlertTriangle,
   Download,
   Plus,
   X,
   ExternalLink,
-  FileText,
   Check,
   ChevronRight,
   AlertCircle,
-  Store
+  Store,
+  ArrowRight,
+  Building2,
+  Sparkles,
 } from 'lucide-react';
 import AdminLayout from '../components/AdminLayout';
 import Input from '../components/Input';
@@ -38,8 +38,10 @@ import {
   orderService,
   customerService,
   categoryService,
+  adminVendorService,
 } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { formatImageUrl } from '../utils/imageUrl';
 
 /**
  * Status color and styling configuration for orders
@@ -56,9 +58,9 @@ const STATUS_CONFIG = {
     color: 'text-indigo-600',
   },
   Confirmed: {
-    badge: 'bg-blue-50 text-blue-800 border-blue-200',
+    badge: 'bg-sky-50 text-sky-800 border-sky-200',
     icon: CheckCircle2,
-    color: 'text-blue-600',
+    color: 'text-sky-600',
   },
   Pending: {
     badge: 'bg-amber-50 text-amber-800 border-amber-200',
@@ -88,8 +90,10 @@ const ALLOWED_STATUS_TRANSITIONS = {
  * - Real-time Revenue & Orders from Orders Collection
  * - Real-time Product Catalog counts from Product Collection
  * - Real-time Registered Customer metrics from User Collection
- * - Dynamic Category Share breakdown & live responsive sales chart
- * - Live Order Quick Dossier modal with status update capability
+ * - Live Multi-Vendor Merchant Applications & Sales from Store Collection
+ * - Real-life Merchant Leaderboard & Category Share breakdown
+ * - Dynamic interactive SVG Sales Performance chart with INR (₹) formatting
+ * - Live Order Quick Dossier modal with real-time status update capability
  * - CSV Order Ledger export
  */
 export default function AdminDashboard() {
@@ -102,6 +106,21 @@ export default function AdminDashboard() {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [customers, setCustomers] = useState([]);
+  const [vendors, setVendors] = useState([]);
+  const [vendorCounts, setVendorCounts] = useState({
+    all: 0,
+    pending: 0,
+    approved: 0,
+    rejected: 0,
+    suspended: 0,
+  });
+  const [vendorSummary, setVendorSummary] = useState({
+    totalVendors: 0,
+    pendingApprovals: 0,
+    approvedVendors: 0,
+    totalMarketplaceSales: 0,
+  });
+
   const [isLoading, setIsLoading] = useState(true);
   const [apiError, setApiError] = useState(null);
   const [successToast, setSuccessToast] = useState(null);
@@ -124,15 +143,16 @@ export default function AdminDashboard() {
     setApiError(null);
 
     try {
-      const [ordersRes, productsRes, categoriesRes, customersRes] =
+      const [ordersRes, productsRes, categoriesRes, customersRes, vendorsRes] =
         await Promise.allSettled([
           orderService.getAllOrders(),
           productService.getProducts({ limit: 100 }),
           categoryService.getCategories(),
           customerService.getCustomers(),
+          adminVendorService.getApplications({ limit: 100 }),
         ]);
 
-      // Orders
+      // 1. Orders
       let loadedOrders = [];
       if (ordersRes.status === 'fulfilled' && ordersRes.value) {
         if (Array.isArray(ordersRes.value.orders)) {
@@ -145,7 +165,7 @@ export default function AdminDashboard() {
       }
       setOrders(loadedOrders);
 
-      // Products
+      // 2. Products
       let loadedProducts = [];
       if (productsRes.status === 'fulfilled' && productsRes.value) {
         if (Array.isArray(productsRes.value.products)) {
@@ -154,7 +174,7 @@ export default function AdminDashboard() {
       }
       setProducts(loadedProducts);
 
-      // Categories
+      // 3. Categories
       let loadedCategories = [];
       if (categoriesRes.status === 'fulfilled' && categoriesRes.value) {
         if (Array.isArray(categoriesRes.value.categories)) {
@@ -163,7 +183,7 @@ export default function AdminDashboard() {
       }
       setCategories(loadedCategories);
 
-      // Customers
+      // 4. Customers
       let loadedCustomers = [];
       if (customersRes.status === 'fulfilled' && customersRes.value) {
         if (Array.isArray(customersRes.value.customers)) {
@@ -175,6 +195,21 @@ export default function AdminDashboard() {
         }
       }
       setCustomers(loadedCustomers);
+
+      // 5. Vendors & Stores
+      let loadedVendors = [];
+      if (vendorsRes.status === 'fulfilled' && vendorsRes.value) {
+        if (Array.isArray(vendorsRes.value.stores)) {
+          loadedVendors = vendorsRes.value.stores;
+        }
+        if (vendorsRes.value.counts) {
+          setVendorCounts(vendorsRes.value.counts);
+        }
+        if (vendorsRes.value.summary) {
+          setVendorSummary(vendorsRes.value.summary);
+        }
+      }
+      setVendors(loadedVendors);
     } catch (err) {
       console.error('Failed to load dashboard data:', err);
       setApiError('Unable to connect to live database metrics. Please retry.');
@@ -195,11 +230,18 @@ export default function AdminDashboard() {
     }
   }, [successToast]);
 
-  // Total Gross Revenue from all live orders (excluding cancelled)
+  // Total Gross Revenue from all live orders (excluding cancelled) in INR
   const totalRevenue = useMemo(() => {
     return orders
       .filter((o) => (o.orderStatus || o.status) !== 'Cancelled')
       .reduce((sum, ord) => sum + (Number(ord.totalAmount) || 0), 0);
+  }, [orders]);
+
+  // Pending Orders Count awaiting admin / vendor action
+  const pendingOrdersCount = useMemo(() => {
+    return orders.filter(
+      (o) => (o.orderStatus || o.status || '').toLowerCase() === 'pending'
+    ).length;
   }, [orders]);
 
   // Active (non-cancelled) Orders count
@@ -210,67 +252,142 @@ export default function AdminDashboard() {
   // Low stock products alert (stock <= 5)
   const lowStockProducts = useMemo(() => {
     return products.filter((p) => {
-      const stock = typeof p.countInStock === 'number' ? p.countInStock : typeof p.stock === 'number' ? p.stock : 10;
+      const stock =
+        typeof p.countInStock === 'number'
+          ? p.countInStock
+          : typeof p.stock === 'number'
+          ? p.stock
+          : 10;
       return stock <= 5;
     });
   }, [products]);
 
-  // Dynamic KPI Metric Cards
+  // Top Performing Merchants sorted by Gross Sales
+  const topVendors = useMemo(() => {
+    return [...vendors]
+      .sort((a, b) => (Number(b.totalSales) || 0) - (Number(a.totalSales) || 0))
+      .slice(0, 5);
+  }, [vendors]);
+
+  // Order Status Distribution Breakdown
+  const orderStatusDistribution = useMemo(() => {
+    const counts = {
+      Delivered: 0,
+      Shipped: 0,
+      Confirmed: 0,
+      Pending: 0,
+      Cancelled: 0,
+    };
+    orders.forEach((o) => {
+      const st = o.orderStatus || o.status || 'Pending';
+      if (counts[st] !== undefined) counts[st]++;
+      else counts.Pending++;
+    });
+    const total = orders.length || 1;
+    return Object.entries(counts).map(([status, count]) => ({
+      status,
+      count,
+      percentage: Math.round((count / total) * 100),
+      config: STATUS_CONFIG[status] || STATUS_CONFIG.Pending,
+    }));
+  }, [orders]);
+
+  // Dynamic Executive KPI Metric Cards
   const kpiStats = useMemo(() => {
-    const formattedRevenue = `$${totalRevenue.toLocaleString('en-US', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })}`;
+    const formattedRevenue = `₹${Number(totalRevenue || 0).toLocaleString('en-IN')}`;
 
     return [
       {
-        title: 'Total Revenue',
+        title: 'Platform Gross Revenue',
         value: formattedRevenue,
-        change: orders.length > 0 ? `${orders.length} order${orders.length > 1 ? 's' : ''}` : '0 orders',
+        change: `${orders.length} order${orders.length !== 1 ? 's' : ''}`,
         trend: 'up',
-        period: 'live gross revenue',
-        icon: DollarSign,
-        accent: 'text-amber-700 bg-amber-50 border-amber-200',
+        period: 'live customer GMV',
+        icon: TrendingUp,
+        accent: 'text-amber-700 bg-amber-500/10 border-amber-500/20',
+        badgeClass: 'bg-amber-50 text-amber-800 border-amber-200',
         link: '/admin/orders',
       },
       {
-        title: 'Total Orders',
+        title: 'Total Client Orders',
         value: String(orders.length),
-        change: `${activeOrdersCount} active`,
-        trend: 'up',
-        period: 'in live database',
+        change:
+          pendingOrdersCount > 0
+            ? `${pendingOrdersCount} pending action`
+            : `${activeOrdersCount} active`,
+        trend: pendingOrdersCount > 0 ? 'alert' : 'up',
+        period: 'in live ledger',
         icon: ShoppingBag,
-        accent: 'text-emerald-700 bg-emerald-50 border-emerald-200',
+        accent: 'text-emerald-700 bg-emerald-500/10 border-emerald-500/20',
+        badgeClass:
+          pendingOrdersCount > 0
+            ? 'bg-amber-50 text-amber-800 border-amber-200 animate-pulse'
+            : 'bg-emerald-50 text-emerald-800 border-emerald-200',
         link: '/admin/orders',
       },
       {
-        title: 'Total Products',
+        title: 'Merchant Partners',
+        value: String(vendorCounts.approved || 0),
+        change:
+          vendorCounts.pending > 0
+            ? `${vendorCounts.pending} awaiting review`
+            : `${vendorCounts.all} registered`,
+        trend: vendorCounts.pending > 0 ? 'alert' : 'neutral',
+        period: 'licensed stores',
+        icon: Store,
+        accent: 'text-indigo-700 bg-indigo-500/10 border-indigo-500/20',
+        badgeClass:
+          vendorCounts.pending > 0
+            ? 'bg-amber-50 text-amber-800 border-amber-200 animate-pulse'
+            : 'bg-indigo-50 text-indigo-800 border-indigo-200',
+        link: '/admin/vendors',
+      },
+      {
+        title: 'Product Catalog',
         value: String(products.length),
-        change: '100% active',
-        trend: 'neutral',
+        change:
+          lowStockProducts.length > 0
+            ? `${lowStockProducts.length} low stock`
+            : 'healthy inventory',
+        trend: lowStockProducts.length > 0 ? 'alert' : 'neutral',
         period: `in ${categories.length || 1} categories`,
         icon: Package,
-        accent: 'text-blue-700 bg-blue-50 border-blue-200',
+        accent: 'text-sky-700 bg-sky-500/10 border-sky-500/20',
+        badgeClass:
+          lowStockProducts.length > 0
+            ? 'bg-rose-50 text-rose-800 border-rose-200'
+            : 'bg-sky-50 text-sky-800 border-sky-200',
         link: '/admin/products',
       },
       {
-        title: 'Total Customers',
+        title: 'Verified Patrons',
         value: String(customers.length),
         change: `${customers.length} registered`,
         trend: 'up',
         period: 'client profiles',
         icon: Users,
-        accent: 'text-purple-700 bg-purple-50 border-purple-200',
+        accent: 'text-purple-700 bg-purple-500/10 border-purple-500/20',
+        badgeClass: 'bg-purple-50 text-purple-800 border-purple-200',
         link: '/admin/customers',
       },
     ];
-  }, [totalRevenue, orders, activeOrdersCount, products, categories, customers]);
+  }, [
+    totalRevenue,
+    orders,
+    activeOrdersCount,
+    pendingOrdersCount,
+    vendorCounts,
+    products,
+    lowStockProducts,
+    categories,
+    customers,
+  ]);
 
   // Dynamic Category Share breakdown based on live products
   const categoryStats = useMemo(() => {
     const counts = {};
     products.forEach((p) => {
-      const cat = p.category || 'General';
+      const cat = p.category?.name || p.category || 'Curated Signature';
       counts[cat] = (counts[cat] || 0) + 1;
     });
 
@@ -280,11 +397,9 @@ export default function AdminDashboard() {
         const percentage = Math.round((count / total) * 100);
         return {
           name,
-          count: `${count} model${count > 1 ? 's' : ''} listed`,
+          count: `${count} item${count > 1 ? 's' : ''}`,
           percentage,
-          amount: `$${(percentage * (totalRevenue || 1000) / 100).toLocaleString(undefined, {
-            maximumFractionDigits: 0,
-          })}`,
+          amount: `₹${Math.round((percentage * (totalRevenue || 1000)) / 100).toLocaleString('en-IN')}`,
         };
       })
       .sort((a, b) => b.percentage - a.percentage);
@@ -309,13 +424,17 @@ export default function AdminDashboard() {
         const itemNames = (order.products || [])
           .map((p) => (p.name || '').toLowerCase())
           .join(' ');
+        const storeNames = (order.products || [])
+          .map((p) => (p.storeName || p.store?.name || '').toLowerCase())
+          .join(' ');
 
         const matchesSearch =
           !q ||
           id.includes(q) ||
           customerName.includes(q) ||
           email.includes(q) ||
-          itemNames.includes(q);
+          itemNames.includes(q) ||
+          storeNames.includes(q);
 
         const orderStatus = (order.orderStatus || order.status || 'Pending').toLowerCase();
         const matchesStatus =
@@ -326,7 +445,7 @@ export default function AdminDashboard() {
       .slice(0, 8);
   }, [orders, searchQuery, statusFilter]);
 
-  // Fully Dynamic Sales Chart Calculations
+  // Fully Dynamic Sales Chart Calculations in INR (₹)
   const chartData = useMemo(() => {
     const width = 600;
     const height = 220;
@@ -349,7 +468,6 @@ export default function AdminDashboard() {
         dayOrders[dayIdx] += 1;
       });
 
-      // If database has only orders on one day, smooth visual representation
       points = days.map((label, idx) => ({
         label,
         value: dayValues[idx],
@@ -375,46 +493,51 @@ export default function AdminDashboard() {
         ordersCount: qOrders[idx],
       }));
     } else {
-      // Monthly: recent months
-      const months = ['May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct'];
-      const mValues = [0, 0, 0, 0, 0, 0];
-      const mOrders = [0, 0, 0, 0, 0, 0];
+      // Monthly: recent 6 months
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const now = new Date();
+      const recentMonths = [];
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        recentMonths.push({
+          monthIdx: d.getMonth(),
+          year: d.getFullYear(),
+          label: monthNames[d.getMonth()],
+          value: 0,
+          ordersCount: 0,
+        });
+      }
 
       orders.forEach((o) => {
         if ((o.orderStatus || o.status) === 'Cancelled') return;
         const d = o.createdAt ? new Date(o.createdAt) : new Date();
-        const m = d.getMonth(); // 0-11
-        // Map current month to last slot (index 5)
-        const currentMonth = new Date().getMonth();
-        const diff = (m - currentMonth + 12) % 12;
-        const targetSlot = 5 - (12 - diff) % 12;
-        if (targetSlot >= 0 && targetSlot < 6) {
-          mValues[targetSlot] += Number(o.totalAmount) || 0;
-          mOrders[targetSlot] += 1;
-        } else {
-          mValues[5] += Number(o.totalAmount) || 0;
-          mOrders[5] += 1;
+        const m = d.getMonth();
+        const y = d.getFullYear();
+        const match = recentMonths.find((rm) => rm.monthIdx === m && rm.year === y);
+        if (match) {
+          match.value += Number(o.totalAmount) || 0;
+          match.ordersCount += 1;
+        } else if (recentMonths.length > 0) {
+          recentMonths[recentMonths.length - 1].value += Number(o.totalAmount) || 0;
+          recentMonths[recentMonths.length - 1].ordersCount += 1;
         }
       });
 
-      points = months.map((label, idx) => ({
-        label,
-        value: mValues[idx],
-        ordersCount: mOrders[idx],
+      points = recentMonths.map((m) => ({
+        label: m.label,
+        value: m.value,
+        ordersCount: m.ordersCount,
       }));
     }
 
-    // Ensure non-zero max for smooth graphing
     const maxValue = Math.max(...points.map((p) => p.value), 500);
 
-    // Compute coordinates
     const coords = points.map((p, i) => {
       const x = paddingX + (i / Math.max(1, points.length - 1)) * (width - 2 * paddingX);
       const y = height - paddingBottom - (p.value / maxValue) * (height - paddingTop - paddingBottom);
       return { ...p, x, y };
     });
 
-    // Build SVG Path string
     let pathD = '';
     let areaD = '';
     if (coords.length > 0) {
@@ -438,14 +561,14 @@ export default function AdminDashboard() {
     return { coords, pathD, areaD, maxValue, points };
   }, [orders, chartPeriod]);
 
-  // Open Order Dossier
+  // Open Order Dossier Modal
   const handleOpenOrderModal = (order) => {
     setSelectedOrder(order);
     setNewOrderStatus(order.orderStatus || order.status || 'Pending');
     setStatusUpdateMsg(null);
   };
 
-  // Close Order Dossier
+  // Close Order Dossier Modal
   const handleCloseOrderModal = () => {
     setSelectedOrder(null);
     setStatusUpdateMsg(null);
@@ -479,7 +602,10 @@ export default function AdminDashboard() {
       setStatusUpdateMsg({ type: 'success', text: `Status successfully updated to ${newOrderStatus}.` });
     } catch (err) {
       console.error('Failed to update status:', err);
-      setStatusUpdateMsg({ type: 'error', text: err.response?.data?.message || 'Failed to update order status.' });
+      setStatusUpdateMsg({
+        type: 'error',
+        text: err.response?.data?.message || 'Failed to update order status.',
+      });
     } finally {
       setIsUpdatingStatus(false);
     }
@@ -492,7 +618,7 @@ export default function AdminDashboard() {
       return;
     }
 
-    const headers = ['Order ID', 'Date', 'Customer Name', 'Email', 'Payment Method', 'Status', 'Total Amount'];
+    const headers = ['Order ID', 'Date', 'Customer Name', 'Email', 'Payment Method', 'Status', 'Total Amount (INR)'];
     const rows = orders.map((o) => [
       `"${o._id || o.id}"`,
       `"${new Date(o.createdAt || Date.now()).toISOString()}"`,
@@ -503,7 +629,8 @@ export default function AdminDashboard() {
       `"${Number(o.totalAmount || 0).toFixed(2)}"`,
     ]);
 
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
+    const csvContent =
+      'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
@@ -518,14 +645,14 @@ export default function AdminDashboard() {
     <AdminLayout
       activePage="dashboard"
       title="Executive Dashboard"
-      subtitle="Live eCommerce Performance, Analytics & Catalog Management"
+      subtitle="Live Multi-Vendor Performance, Merchant Telemetry & Fulfillment Suite"
       actions={
         <div className="flex items-center gap-2 sm:gap-3">
           {/* Quick Search */}
           <div className="hidden md:block w-64 relative">
             <Input
               type="search"
-              placeholder="Search orders, clients..."
+              placeholder="Search orders, clients, stores..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               icon={Search}
@@ -566,12 +693,12 @@ export default function AdminDashboard() {
         </div>
       }
     >
-      <div className="space-y-6">
+      <div className="space-y-6 sm:space-y-7">
         {/* ========================================================================= */}
         {/* 1. SUCCESS TOAST & LIVE DATABASE STATUS BANNER */}
         {/* ========================================================================= */}
         {successToast && (
-          <div className="bg-emerald-600 text-white px-4 py-2.5 rounded-xl shadow-md flex items-center justify-between text-xs animate-fade-in">
+          <div className="bg-emerald-700 text-white px-4 py-2.5 rounded-xl shadow-md flex items-center justify-between text-xs animate-in fade-in duration-200">
             <div className="flex items-center gap-2 font-semibold">
               <CheckCircle2 size={16} />
               <span>{successToast}</span>
@@ -585,33 +712,83 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        <div className="bg-emerald-50/90 border border-emerald-200/90 rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-emerald-950 text-left">
+        {/* Live Synchronized Telemetry Banner */}
+        <div className="bg-emerald-50/90 border border-emerald-200/90 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-emerald-950 text-left shadow-2xs">
           <div className="flex items-center gap-2.5">
-            <ShieldCheck size={18} className="text-emerald-700 shrink-0" />
+            <ShieldCheck size={19} className="text-emerald-700 shrink-0" />
             <div>
-              <span className="font-bold text-emerald-900">Live Database Connected:</span>
+              <span className="font-bold text-emerald-900">Live Enterprise Database Connected:</span>
               <span className="ml-1 text-emerald-800">
-                All metrics, product counts ({products.length}), active categories ({categories.length}), and client orders ({orders.length}) are synchronized with MongoDB.
+                {products.length} catalog products, {categories.length} taxonomies, {orders.length} client orders, and {vendors.length} merchant stores synchronized with local MongoDB.
               </span>
             </div>
           </div>
           <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
             <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse"></span>
-              Real-time Telemetry
+              Real-time Active Telemetry
             </span>
           </div>
         </div>
 
-        {/* API Error Banner if any */}
+        {/* Urgent Action / Attention Center */}
+        {(vendorCounts.pending > 0 || pendingOrdersCount > 0) && (
+          <div className="bg-gradient-to-r from-amber-500/15 via-amber-500/10 to-amber-500/5 border border-amber-400/50 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4 text-left animate-in fade-in duration-200">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-700 border border-amber-500/30 flex items-center justify-center shrink-0 mt-0.5">
+                <AlertCircle size={20} className="animate-pulse" />
+              </div>
+              <div>
+                <h4 className="font-serif text-sm sm:text-base font-bold text-brand-black">
+                  Administrative Action Required
+                </h4>
+                <div className="text-xs text-brand-charcoal mt-0.5 space-y-0.5">
+                  {vendorCounts.pending > 0 && (
+                    <p className="font-semibold text-amber-900">
+                      • <strong className="text-amber-950">{vendorCounts.pending}</strong> new vendor store application{vendorCounts.pending > 1 ? 's' : ''} awaiting your administrative approval before they can access the vendor suite.
+                    </p>
+                  )}
+                  {pendingOrdersCount > 0 && (
+                    <p className="font-semibold text-emerald-900">
+                      • <strong className="text-emerald-950">{pendingOrdersCount}</strong> customer order{pendingOrdersCount > 1 ? 's' : ''} currently in Pending status awaiting fulfillment confirmation.
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2.5 shrink-0 self-start md:self-auto">
+              {vendorCounts.pending > 0 && (
+                <Link
+                  to="/admin/vendors"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-bold shadow-xs transition-colors"
+                >
+                  <Store size={14} />
+                  <span>Review Vendors ({vendorCounts.pending})</span>
+                </Link>
+              )}
+              {pendingOrdersCount > 0 && (
+                <Link
+                  to="/admin/orders"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-brand-black hover:bg-brand-charcoal text-white rounded-xl text-xs font-bold shadow-xs transition-colors"
+                >
+                  <ShoppingBag size={14} />
+                  <span>Process Orders ({pendingOrdersCount})</span>
+                </Link>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* API Error Alert if any */}
         {apiError && (
-          <div className="bg-rose-50 border border-rose-200 rounded-xl p-4 text-xs text-rose-800 flex items-center justify-between gap-2">
+          <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4 text-xs text-rose-800 flex items-center justify-between gap-2 text-left">
             <div className="flex items-center gap-2">
               <AlertTriangle size={16} className="text-rose-600 shrink-0" />
               <span>{apiError}</span>
             </div>
             <Button variant="outline" size="sm" onClick={fetchDashboardData} icon={RefreshCw}>
-              Retry
+              Retry Connection
             </Button>
           </div>
         )}
@@ -619,7 +796,7 @@ export default function AdminDashboard() {
         {/* ========================================================================= */}
         {/* 2. DYNAMIC SUMMARY KPI CARDS */}
         {/* ========================================================================= */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-5">
           {kpiStats.map((stat, index) => {
             const Icon = stat.icon;
             const CardWrapper = stat.link ? Link : 'div';
@@ -628,21 +805,21 @@ export default function AdminDashboard() {
               <CardWrapper
                 key={index}
                 {...wrapperProps}
-                className={`bg-brand-surface border border-brand-border/70 rounded-xl p-5 shadow-xs hover:shadow-md transition-all text-left flex flex-col justify-between ${
+                className={`bg-brand-surface border border-brand-border/70 rounded-2xl p-4 sm:p-5 shadow-xs hover:shadow-md transition-all text-left flex flex-col justify-between ${
                   stat.link ? 'hover:border-brand-accent/50 group cursor-pointer block' : ''
                 }`}
               >
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-brand-muted">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-brand-muted">
                     {stat.title}
                   </span>
-                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center border ${stat.accent}`}>
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center border ${stat.accent}`}>
                     <Icon size={18} />
                   </div>
                 </div>
 
                 <div>
-                  <h3 className="font-serif text-2xl sm:text-3xl font-bold text-brand-black tracking-tight mb-2">
+                  <h3 className="font-serif text-2xl sm:text-3xl font-black text-brand-black tracking-tight mb-2">
                     {isLoading ? (
                       <span className="inline-block w-20 h-7 bg-brand-border/40 rounded animate-pulse" />
                     ) : (
@@ -650,11 +827,10 @@ export default function AdminDashboard() {
                     )}
                   </h3>
                   <div className="flex items-center gap-1.5 text-xs">
-                    <span className="flex items-center text-emerald-700 font-bold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
-                      <TrendingUp size={12} className="mr-0.5" />
+                    <span className={`flex items-center font-bold px-1.5 py-0.5 rounded border text-[10px] ${stat.badgeClass}`}>
                       {stat.change}
                     </span>
-                    <span className="text-brand-muted text-[11px]">{stat.period}</span>
+                    <span className="text-brand-muted text-[10px] truncate">{stat.period}</span>
                   </div>
                 </div>
               </CardWrapper>
@@ -665,9 +841,12 @@ export default function AdminDashboard() {
         {/* ========================================================================= */}
         {/* 3. QUICK ACTIONS BAR */}
         {/* ========================================================================= */}
-        <div className="bg-brand-surface border border-brand-border/70 rounded-xl p-4 shadow-xs flex flex-wrap items-center justify-between gap-3 text-left">
+        <div className="bg-brand-surface border border-brand-border/70 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-wrap items-center justify-between gap-3 text-left">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-brand-charcoal">Quick Actions:</span>
+            <Sparkles size={16} className="text-brand-accent" />
+            <span className="text-xs font-bold uppercase tracking-wider text-brand-charcoal">
+              Executive Controls:
+            </span>
           </div>
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <Link
@@ -678,11 +857,18 @@ export default function AdminDashboard() {
               <span>Add New Product</span>
             </Link>
             <Link
+              to="/admin/vendors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-brand-offwhite hover:bg-brand-cream border border-brand-border text-brand-black text-xs font-semibold rounded-lg transition-colors cursor-pointer"
+            >
+              <Store size={14} className="text-amber-600" />
+              <span>Review Merchants ({vendorCounts.pending})</span>
+            </Link>
+            <Link
               to="/admin/categories"
               className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-brand-offwhite hover:bg-brand-cream border border-brand-border text-brand-black text-xs font-semibold rounded-lg transition-colors cursor-pointer"
             >
               <Layers size={14} />
-              <span>Manage Categories</span>
+              <span>Manage Taxonomies</span>
             </Link>
             <Link
               to="/admin/orders"
@@ -705,30 +891,34 @@ export default function AdminDashboard() {
         </div>
 
         {/* ========================================================================= */}
-        {/* 4. DYNAMIC SALES OVERVIEW & CATEGORY SHARE */}
+        {/* 4. DYNAMIC SALES OVERVIEW & MERCHANT LEADERBOARD */}
         {/* ========================================================================= */}
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
           {/* Sales Chart Widget (Cols 1-8) */}
-          <div className="xl:col-span-8 bg-brand-surface border border-brand-border/70 rounded-xl p-5 sm:p-6 shadow-xs text-left">
+          <div className="xl:col-span-8 bg-brand-surface border border-brand-border/70 rounded-2xl p-5 sm:p-6 shadow-xs text-left">
             {/* Chart Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-5 border-b border-brand-border/60">
               <div>
                 <h3 className="font-serif text-lg font-bold text-brand-black">
-                  Sales Overview & Performance Trends
+                  Revenue & Sales Performance Trends
                 </h3>
-                <p className="text-xs text-brand-muted">
-                  Total Processed Revenue: <strong className="text-brand-black font-semibold">${totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}</strong> across {orders.length} orders
+                <p className="text-xs text-brand-muted mt-0.5">
+                  Total Processed Revenue:{' '}
+                  <strong className="text-brand-black font-serif font-bold">
+                    ₹{totalRevenue.toLocaleString('en-IN')}
+                  </strong>{' '}
+                  across {orders.length} customer acquisitions
                 </p>
               </div>
 
               {/* Period Selector Tabs */}
-              <div className="inline-flex rounded-lg border border-brand-border bg-brand-offwhite p-1 self-start sm:self-auto">
+              <div className="inline-flex rounded-xl border border-brand-border bg-brand-offwhite p-1 self-start sm:self-auto">
                 {['weekly', 'monthly', 'annual'].map((period) => (
                   <button
                     key={period}
                     type="button"
                     onClick={() => setChartPeriod(period)}
-                    className={`px-3 py-1 text-xs font-semibold capitalize rounded-md transition-colors cursor-pointer ${
+                    className={`px-3 py-1 text-xs font-semibold capitalize rounded-lg transition-colors cursor-pointer ${
                       chartPeriod === period
                         ? 'bg-brand-black text-white shadow-xs'
                         : 'text-brand-charcoal hover:text-brand-black'
@@ -746,14 +936,14 @@ export default function AdminDashboard() {
                 {/* Hover Tooltip */}
                 {hoveredPoint && (
                   <div
-                    className="absolute z-20 -translate-x-1/2 -translate-y-full mb-2 bg-brand-black text-white px-2.5 py-1.5 rounded-lg text-xs shadow-lg pointer-events-none transition-all border border-brand-accent/40"
+                    className="absolute z-20 -translate-x-1/2 -translate-y-full mb-2 bg-brand-black text-white px-3 py-1.5 rounded-xl text-xs shadow-xl pointer-events-none transition-all border border-brand-accent/40"
                     style={{
                       left: `${(hoveredPoint.x / 600) * 100}%`,
                       top: `${(hoveredPoint.y / 220) * 100}%`,
                     }}
                   >
                     <p className="font-bold text-brand-accent">{hoveredPoint.label}</p>
-                    <p className="text-[11px] font-mono">${hoveredPoint.value.toLocaleString()}</p>
+                    <p className="text-[11px] font-mono">₹{hoveredPoint.value.toLocaleString('en-IN')}</p>
                     <p className="text-[9px] text-neutral-300">{hoveredPoint.ordersCount || 0} order(s)</p>
                   </div>
                 )}
@@ -765,8 +955,8 @@ export default function AdminDashboard() {
                 >
                   <defs>
                     <linearGradient id="luxuryChartGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                      <stop offset="0%" stopColor="#C5A880" stopOpacity="0.5" />
-                      <stop offset="100%" stopColor="#C5A880" stopOpacity="0.03" />
+                      <stop offset="0%" stopColor="#C5A880" stopOpacity="0.45" />
+                      <stop offset="100%" stopColor="#C5A880" stopOpacity="0.02" />
                     </linearGradient>
                   </defs>
 
@@ -824,8 +1014,8 @@ export default function AdminDashboard() {
                 {chartData.points.map((m, i) => (
                   <div key={i} className="flex flex-col items-center">
                     <span className="font-semibold text-brand-charcoal">{m.label}</span>
-                    <span className="text-[11px] text-brand-muted">
-                      ${m.value.toLocaleString()}
+                    <span className="text-[11px] text-brand-muted font-mono">
+                      ₹{m.value.toLocaleString('en-IN')}
                     </span>
                   </div>
                 ))}
@@ -837,7 +1027,7 @@ export default function AdminDashboard() {
               <div>
                 <span className="text-brand-muted">Average Order Value</span>
                 <p className="font-serif text-base font-bold text-brand-black mt-0.5">
-                  ${orders.length > 0 ? (totalRevenue / orders.length).toFixed(2) : '0.00'}
+                  ₹{orders.length > 0 ? Math.round(totalRevenue / orders.length).toLocaleString('en-IN') : '0'}
                 </p>
               </div>
               <div>
@@ -855,73 +1045,191 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Dynamic Category Share Widget (Cols 9-12) */}
-          <div className="xl:col-span-4 bg-brand-surface border border-brand-border/70 rounded-xl p-5 sm:p-6 shadow-xs text-left space-y-5">
+          {/* Top Performing Merchants & Ateliers Leaderboard (Cols 9-12) */}
+          <div className="xl:col-span-4 bg-brand-surface border border-brand-border/70 rounded-2xl p-5 sm:p-6 shadow-xs text-left space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-brand-border/60">
-              <h3 className="font-serif text-lg font-bold text-brand-black">
-                Category Share
-              </h3>
-              <span className="text-xs text-brand-accent font-semibold">Live Curations</span>
+              <div>
+                <h3 className="font-serif text-base sm:text-lg font-bold text-brand-black">
+                  Merchant Leaderboard
+                </h3>
+                <p className="text-[11px] text-brand-muted">Top grossing partner stores</p>
+              </div>
+              <Link
+                to="/admin/vendors"
+                className="text-xs font-bold text-brand-accent hover:underline flex items-center gap-1"
+              >
+                <span>All Stores</span>
+                <ArrowRight size={12} />
+              </Link>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-3">
+              {topVendors.length === 0 ? (
+                <div className="py-8 text-center text-xs text-brand-muted">
+                  <Store size={24} className="mx-auto mb-2 text-brand-border" />
+                  <p>No vendor store records found.</p>
+                </div>
+              ) : (
+                topVendors.map((v, i) => (
+                  <div
+                    key={v._id || v.id || i}
+                    className="p-3 rounded-xl bg-brand-offwhite/50 border border-brand-border/60 flex items-center justify-between gap-3 hover:bg-brand-cream/40 transition-colors"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-700 border border-amber-500/20 font-bold text-xs flex items-center justify-center shrink-0">
+                        #{i + 1}
+                      </div>
+                      <div className="min-w-0 truncate">
+                        <p className="font-bold text-brand-black text-xs truncate">{v.name}</p>
+                        <p className="text-[10px] text-brand-muted truncate">
+                          {v.ordersCount || v.totalOrders || 0} orders • {v.productsCount || 0} products
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <span className="font-serif font-bold text-brand-black text-xs block">
+                        ₹{Number(v.totalSales || 0).toLocaleString('en-IN')}
+                      </span>
+                      <span
+                        className={`text-[9px] font-bold px-1.5 py-0.2 rounded-full capitalize ${
+                          v.status === 'approved'
+                            ? 'bg-emerald-50 text-emerald-700'
+                            : 'bg-amber-50 text-amber-700'
+                        }`}
+                      >
+                        {v.status}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Merchant Directory Quick Stat Link */}
+            <div className="p-3 bg-brand-cream/40 rounded-xl border border-brand-border/60 text-xs text-brand-charcoal flex items-center justify-between">
+              <div>
+                <span className="font-bold block text-brand-black">Partner Network</span>
+                <span className="text-[10px] text-brand-muted">
+                  {vendorCounts.approved} active, {vendorCounts.pending} pending review
+                </span>
+              </div>
+              <Link
+                to="/admin/vendors"
+                className="text-xs font-bold text-brand-black hover:text-brand-accent transition-colors"
+              >
+                Manage &rarr;
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* ========================================================================= */}
+        {/* 5. FULFILLMENT VELOCITY & CATEGORY SHARE DUAL SECTION */}
+        {/* ========================================================================= */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start text-left">
+          {/* Order Fulfillment Status Velocity */}
+          <div className="bg-brand-surface border border-brand-border/70 rounded-2xl p-5 sm:p-6 shadow-xs space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-brand-border/60">
+              <div>
+                <h3 className="font-serif text-base sm:text-lg font-bold text-brand-black">
+                  Fulfillment Status Breakdown
+                </h3>
+                <p className="text-[11px] text-brand-muted">Order journey progression across catalog</p>
+              </div>
+              <Link to="/admin/orders" className="text-xs font-bold text-brand-accent hover:underline flex items-center gap-1">
+                <span>View Orders</span>
+                <ArrowRight size={12} />
+              </Link>
+            </div>
+
+            <div className="space-y-3.5">
+              {orderStatusDistribution.map((item) => (
+                <div key={item.status} className="space-y-1">
+                  <div className="flex items-center justify-between text-xs font-semibold">
+                    <div className="flex items-center gap-1.5">
+                      <span className={`w-2 h-2 rounded-full ${
+                        item.status === 'Delivered' ? 'bg-emerald-500' :
+                        item.status === 'Shipped' ? 'bg-indigo-500' :
+                        item.status === 'Confirmed' ? 'bg-sky-500' :
+                        item.status === 'Pending' ? 'bg-amber-500' : 'bg-rose-500'
+                      }`} />
+                      <span className="text-brand-charcoal">{item.status}</span>
+                    </div>
+                    <span className="font-bold text-brand-black font-mono">
+                      {item.count} ({item.percentage}%)
+                    </span>
+                  </div>
+                  <div className="w-full bg-brand-offwhite rounded-full h-2 overflow-hidden border border-brand-border/60">
+                    <div
+                      className={`h-2 rounded-full transition-all duration-700 ${
+                        item.status === 'Delivered' ? 'bg-emerald-500' :
+                        item.status === 'Shipped' ? 'bg-indigo-500' :
+                        item.status === 'Confirmed' ? 'bg-sky-500' :
+                        item.status === 'Pending' ? 'bg-amber-500' : 'bg-rose-500'
+                      }`}
+                      style={{ width: `${Math.max(3, item.percentage)}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Dynamic Category Share Widget */}
+          <div className="bg-brand-surface border border-brand-border/70 rounded-2xl p-5 sm:p-6 shadow-xs space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-brand-border/60">
+              <div>
+                <h3 className="font-serif text-base sm:text-lg font-bold text-brand-black">
+                  Category Catalog Share
+                </h3>
+                <p className="text-[11px] text-brand-muted">Product distribution across departments</p>
+              </div>
+              <Link to="/admin/categories" className="text-xs font-bold text-brand-accent hover:underline flex items-center gap-1">
+                <span>Taxonomies</span>
+                <ArrowRight size={12} />
+              </Link>
+            </div>
+
+            <div className="space-y-3.5">
               {categoryStats.length === 0 ? (
                 <p className="text-xs text-brand-muted py-6 text-center">No categories recorded yet.</p>
               ) : (
-                categoryStats.map((cat, i) => (
+                categoryStats.slice(0, 5).map((cat, i) => (
                   <Link
                     key={i}
-                    to={`/admin/products`}
-                    className="block space-y-1.5 p-2 rounded-lg hover:bg-brand-offwhite transition-colors cursor-pointer group"
-                    title={`View products in ${cat.name}`}
+                    to="/admin/products"
+                    className="block space-y-1 p-1 rounded-lg hover:bg-brand-offwhite transition-colors group cursor-pointer"
                   >
                     <div className="flex items-center justify-between text-xs font-medium">
                       <span className="text-brand-charcoal font-semibold group-hover:text-brand-accent transition-colors">
                         {cat.name}
                       </span>
                       <span className="text-brand-black font-bold">
-                        {cat.percentage}%
+                        {cat.count} ({cat.percentage}%)
                       </span>
                     </div>
-
-                    {/* Dynamic Progress Bar */}
                     <div className="w-full bg-brand-offwhite rounded-full h-2 overflow-hidden border border-brand-border/60">
                       <div
                         className="bg-brand-accent h-2 rounded-full transition-all duration-700"
-                        style={{ width: `${Math.max(5, cat.percentage)}%` }}
-                      ></div>
-                    </div>
-                    <div className="flex items-center justify-between text-[10px] text-brand-muted">
-                      <span>{cat.count}</span>
-                      <span className="font-mono text-brand-charcoal">{cat.amount}</span>
+                        style={{ width: `${Math.max(4, cat.percentage)}%` }}
+                      />
                     </div>
                   </Link>
                 ))
               )}
             </div>
-
-            {/* Catalog Verification Box */}
-            <div className="p-3.5 bg-brand-cream/40 rounded-xl border border-brand-border/60 text-xs text-brand-muted space-y-1">
-              <div className="flex items-center gap-1.5 text-brand-black font-bold">
-                <CheckCircle2 size={14} className="text-emerald-700" />
-                <span>Catalog Integrity Synchronized</span>
-              </div>
-              <p className="text-[11px] leading-relaxed">
-                All {products.length} catalog items are directly connected to MongoDB inventory counters.
-              </p>
-            </div>
           </div>
         </div>
 
         {/* ========================================================================= */}
-        {/* 5. LOW STOCK ATTENTION (IF ANY) */}
+        {/* 6. LOW STOCK INVENTORY ATTENTION WIDGET */}
         {/* ========================================================================= */}
         {lowStockProducts.length > 0 && (
-          <div className="bg-amber-50/90 border border-amber-300 rounded-xl p-4 shadow-xs text-left">
-            <div className="flex items-center justify-between pb-2 mb-2 border-b border-amber-200">
+          <div className="bg-amber-50/90 border border-amber-300 rounded-2xl p-4 sm:p-5 shadow-xs text-left">
+            <div className="flex items-center justify-between pb-2 mb-3 border-b border-amber-200">
               <div className="flex items-center gap-2 text-amber-900 font-bold text-xs uppercase tracking-wider">
                 <AlertCircle size={16} className="text-amber-700" />
-                <span>Inventory Reorder Alert ({lowStockProducts.length} items low in stock)</span>
+                <span>Inventory Attention Required ({lowStockProducts.length} items low in stock)</span>
               </div>
               <Link to="/admin/products" className="text-xs font-semibold text-amber-900 hover:underline">
                 Manage Stock &rarr;
@@ -929,12 +1237,27 @@ export default function AdminDashboard() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
               {lowStockProducts.slice(0, 3).map((prod) => (
-                <div key={prod._id || prod.id} className="p-2.5 rounded-lg bg-white/80 border border-amber-200 flex items-center justify-between">
-                  <div className="truncate mr-2">
-                    <p className="font-semibold text-brand-black truncate">{prod.name}</p>
-                    <p className="text-[10px] text-brand-muted font-mono">${Number(prod.price).toFixed(2)}</p>
+                <div
+                  key={prod._id || prod.id}
+                  className="p-3 rounded-xl bg-white border border-amber-200 flex items-center justify-between shadow-2xs"
+                >
+                  <div className="flex items-center gap-2.5 truncate mr-2">
+                    <img
+                      src={formatImageUrl(prod.images?.[0] || prod.image)}
+                      alt={prod.name || prod.title}
+                      className="w-9 h-9 rounded-lg object-cover bg-brand-offwhite border border-brand-border shrink-0"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                      }}
+                    />
+                    <div className="truncate">
+                      <p className="font-semibold text-brand-black truncate text-xs">{prod.name || prod.title}</p>
+                      <p className="text-[10px] text-brand-muted font-mono">
+                        ₹{Number(prod.price || 0).toLocaleString('en-IN')}
+                      </p>
+                    </div>
                   </div>
-                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300 shrink-0">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300 shrink-0">
                     {prod.countInStock || prod.stock || 0} in stock
                   </span>
                 </div>
@@ -944,16 +1267,16 @@ export default function AdminDashboard() {
         )}
 
         {/* ========================================================================= */}
-        {/* 6. DYNAMIC RECENT ORDERS TABLE */}
+        {/* 7. DYNAMIC RECENT CLIENT ACQUISITIONS TABLE */}
         {/* ========================================================================= */}
-        <div className="bg-brand-surface border border-brand-border/70 rounded-xl shadow-xs overflow-hidden text-left">
+        <div className="bg-brand-surface border border-brand-border/70 rounded-2xl shadow-xs overflow-hidden text-left">
           {/* Table Header & Controls */}
           <div className="p-5 sm:p-6 border-b border-brand-border/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <h3 className="font-serif text-lg font-bold text-brand-black">
                 Recent Client Acquisitions
               </h3>
-              <p className="text-xs text-brand-muted">
+              <p className="text-xs text-brand-muted mt-0.5">
                 Showing {filteredRecentOrders.length} recent orders placed across storefront channels
               </p>
             </div>
@@ -965,7 +1288,7 @@ export default function AdminDashboard() {
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="bg-brand-offwhite border border-brand-border text-xs px-2.5 py-1.5 rounded-md cursor-pointer focus:outline-none"
+                  className="bg-brand-offwhite border border-brand-border text-xs px-2.5 py-1.5 rounded-lg cursor-pointer focus:outline-none"
                 >
                   <option value="All">All Orders ({orders.length})</option>
                   <option value="Confirmed">Confirmed</option>
@@ -983,14 +1306,14 @@ export default function AdminDashboard() {
             <table className="w-full text-left text-xs whitespace-nowrap">
               <thead className="bg-brand-offwhite/80 border-b border-brand-border/60 text-[11px] uppercase tracking-wider text-brand-muted font-semibold">
                 <tr>
-                  <th scope="col" className="py-3 px-5">Order ID</th>
-                  <th scope="col" className="py-3 px-5">Client Name</th>
-                  <th scope="col" className="py-3 px-5">Signature Item</th>
-                  <th scope="col" className="py-3 px-5">Date</th>
-                  <th scope="col" className="py-3 px-5">Payment</th>
-                  <th scope="col" className="py-3 px-5">Amount</th>
-                  <th scope="col" className="py-3 px-5">Status</th>
-                  <th scope="col" className="py-3 px-5 text-right">Quick View</th>
+                  <th scope="col" className="py-3.5 px-5">Order ID</th>
+                  <th scope="col" className="py-3.5 px-5">Client Patron</th>
+                  <th scope="col" className="py-3.5 px-5">Purchased Item & Vendor</th>
+                  <th scope="col" className="py-3.5 px-5">Date</th>
+                  <th scope="col" className="py-3.5 px-5">Payment</th>
+                  <th scope="col" className="py-3.5 px-5">Amount (₹)</th>
+                  <th scope="col" className="py-3.5 px-5">Status</th>
+                  <th scope="col" className="py-3.5 px-5 text-right">Quick View</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-brand-border/50">
@@ -1025,9 +1348,12 @@ export default function AdminDashboard() {
                       order.customer?.email ||
                       '';
                     const firstProduct = order.products?.[0];
-                    const itemsText = firstProduct
-                      ? `${firstProduct.name || 'Product'} ${order.products.length > 1 ? `(+${order.products.length - 1} more)` : ''}`
-                      : 'Luxury Acquisition';
+                    const storeName =
+                      firstProduct?.storeName ||
+                      firstProduct?.store?.name ||
+                      (order.stores && order.stores[0]?.name) ||
+                      'Patel Optical';
+
                     const status = order.orderStatus || order.status || 'Pending';
                     const statusStyle = STATUS_CONFIG[status]?.badge || STATUS_CONFIG.Pending.badge;
 
@@ -1052,7 +1378,7 @@ export default function AdminDashboard() {
                         {/* Client */}
                         <td className="py-3.5 px-5">
                           <div className="flex items-center gap-2.5">
-                            <div className="w-7 h-7 rounded-full bg-brand-cream border border-brand-border text-brand-charcoal text-[11px] font-bold flex items-center justify-center shrink-0">
+                            <div className="w-8 h-8 rounded-full bg-brand-cream border border-brand-border text-brand-charcoal text-[11px] font-bold flex items-center justify-center shrink-0">
                               {initials}
                             </div>
                             <div>
@@ -1062,9 +1388,31 @@ export default function AdminDashboard() {
                           </div>
                         </td>
 
-                        {/* Signature Item */}
-                        <td className="py-3.5 px-5 font-medium text-brand-charcoal max-w-[200px] truncate">
-                          {itemsText}
+                        {/* Purchased Item & Vendor Store */}
+                        <td className="py-3.5 px-5 max-w-[240px]">
+                          <div className="flex items-center gap-2">
+                            {firstProduct && (
+                              <img
+                                src={formatImageUrl(firstProduct.image)}
+                                alt={firstProduct.name}
+                                className="w-8 h-8 rounded-lg object-cover bg-brand-offwhite border border-brand-border shrink-0"
+                                onError={(e) => {
+                                  e.target.style.display = 'none';
+                                }}
+                              />
+                            )}
+                            <div className="truncate min-w-0">
+                              <p className="font-semibold text-brand-black truncate text-xs">
+                                {firstProduct?.name || 'Luxury Acquisition'}
+                              </p>
+                              <div className="flex items-center gap-1 mt-0.5">
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-50 text-amber-900 border border-amber-200">
+                                  <Store size={10} className="text-amber-700 shrink-0" />
+                                  <span className="truncate max-w-[120px]">{storeName}</span>
+                                </span>
+                              </div>
+                            </div>
+                          </div>
                         </td>
 
                         {/* Date */}
@@ -1084,12 +1432,9 @@ export default function AdminDashboard() {
                           {order.paymentMethod || 'Online'}
                         </td>
 
-                        {/* Amount */}
+                        {/* Amount in INR */}
                         <td className="py-3.5 px-5 font-serif font-bold text-brand-black text-sm">
-                          ${(Number(order.totalAmount) || 0).toLocaleString(undefined, {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })}
+                          ₹{Number(order.totalAmount || 0).toLocaleString('en-IN')}
                         </td>
 
                         {/* Status Badge */}
@@ -1137,11 +1482,11 @@ export default function AdminDashboard() {
         </div>
 
         {/* ========================================================================= */}
-        {/* 7. QUICK VIEW ORDER DOSSIER MODAL WITH STATUS CHANGER */}
+        {/* 8. QUICK VIEW ORDER DOSSIER MODAL WITH STATUS CHANGER */}
         {/* ========================================================================= */}
         {selectedOrder && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fade-in">
-            <div className="bg-brand-surface border border-brand-border rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl p-6 text-left space-y-6">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+            <div className="bg-brand-surface border border-brand-border rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl p-6 text-left space-y-6 animate-in zoom-in-95 duration-200">
               {/* Modal Header */}
               <div className="flex items-center justify-between pb-4 border-b border-brand-border">
                 <div>
@@ -1195,7 +1540,7 @@ export default function AdminDashboard() {
                   <span className="text-xs font-bold uppercase tracking-wider text-brand-charcoal">
                     Update Order Status
                   </span>
-                  <span className="text-[11px] text-brand-muted">Direct database sync</span>
+                  <span className="text-[11px] text-brand-muted">Direct MongoDB sync</span>
                 </div>
                 {(() => {
                   const currentSt = selectedOrder.orderStatus || selectedOrder.status || 'Pending';
@@ -1257,7 +1602,7 @@ export default function AdminDashboard() {
                     {selectedOrder.deliveryAddress?.fullName || selectedOrder.customer?.name || 'Valued Client'}
                   </p>
                   <p className="text-brand-charcoal">{selectedOrder.deliveryAddress?.email || selectedOrder.customer?.email || 'N/A'}</p>
-                  <p className="text-brand-muted">{selectedOrder.deliveryAddress?.phone || 'No phone recorded'}</p>
+                  <p className="text-brand-muted">{selectedOrder.deliveryAddress?.mobileNumber || selectedOrder.deliveryAddress?.phone || 'No phone recorded'}</p>
                 </div>
 
                 <div className="p-4 rounded-xl border border-brand-border bg-brand-surface space-y-1.5">
@@ -1267,9 +1612,9 @@ export default function AdminDashboard() {
                   <p className="text-brand-black">{selectedOrder.deliveryAddress?.address || 'Standard Address'}</p>
                   <p className="text-brand-charcoal">
                     {selectedOrder.deliveryAddress?.city || ''}{' '}
-                    {selectedOrder.deliveryAddress?.postalCode ? `- ${selectedOrder.deliveryAddress.postalCode}` : ''}
+                    {selectedOrder.deliveryAddress?.pinCode || selectedOrder.deliveryAddress?.postalCode ? `- ${selectedOrder.deliveryAddress.pinCode || selectedOrder.deliveryAddress.postalCode}` : ''}
                   </p>
-                  <p className="text-brand-muted">{selectedOrder.deliveryAddress?.country || 'International'}</p>
+                  <p className="text-brand-muted">{selectedOrder.deliveryAddress?.state || 'India'}</p>
                 </div>
               </div>
 
@@ -1279,36 +1624,42 @@ export default function AdminDashboard() {
                   Items Purchased ({selectedOrder.products?.length || 0})
                 </span>
                 <div className="divide-y divide-brand-border border border-brand-border rounded-xl overflow-hidden bg-white">
-                  {(selectedOrder.products || []).map((item, idx) => (
-                    <div key={idx} className="p-3 flex items-center justify-between text-xs gap-3">
-                      <div className="flex items-center gap-3 min-w-0">
-                        {item.image ? (
+                  {(selectedOrder.products || []).map((item, idx) => {
+                    const storeName = item.storeName || item.store?.name || 'Patel Optical';
+                    const lineTotal = (Number(item.price) || 0) * (Number(item.quantity) || 1);
+
+                    return (
+                      <div key={idx} className="p-3 flex items-center justify-between text-xs gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
                           <img
-                            src={item.image}
+                            src={formatImageUrl(item.image)}
                             alt={item.name}
                             className="w-10 h-10 object-cover rounded-md border border-brand-border shrink-0"
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                            }}
                           />
-                        ) : (
-                          <div className="w-10 h-10 rounded-md bg-brand-cream border border-brand-border flex items-center justify-center text-brand-muted shrink-0">
-                            <Package size={16} />
+                          <div className="truncate">
+                            <p className="font-semibold text-brand-black truncate">{item.name || 'Product'}</p>
+                            <p className="text-[11px] text-brand-muted">
+                              Qty: {item.quantity} &times; ₹{Number(item.price || 0).toLocaleString('en-IN')}
+                            </p>
+                            <span className="inline-flex items-center gap-1 text-[10px] text-amber-800 font-bold bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200 mt-0.5">
+                              <Store size={10} className="text-amber-600" />
+                              <span>Store: {storeName}</span>
+                            </span>
                           </div>
-                        )}
-                        <div className="truncate">
-                          <p className="font-semibold text-brand-black truncate">{item.name || 'Product'}</p>
-                          <p className="text-[11px] text-brand-muted">
-                            Qty: {item.quantity} &times; ${Number(item.price || 0).toFixed(2)}
-                          </p>
                         </div>
+                        <span className="font-serif font-bold text-brand-black shrink-0">
+                          ₹{Number(lineTotal).toLocaleString('en-IN')}
+                        </span>
                       </div>
-                      <span className="font-serif font-bold text-brand-black shrink-0">
-                        ${((Number(item.price) || 0) * (Number(item.quantity) || 1)).toFixed(2)}
-                      </span>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 
-              {/* Order Totals Summary */}
+              {/* Order Totals Summary in INR */}
               <div className="p-4 rounded-xl bg-brand-offwhite border border-brand-border text-xs space-y-1.5">
                 <div className="flex justify-between text-brand-muted">
                   <span>Payment Method:</span>
@@ -1320,7 +1671,7 @@ export default function AdminDashboard() {
                 </div>
                 <div className="pt-2 border-t border-brand-border/60 flex justify-between text-sm font-bold text-brand-black font-serif">
                   <span>Total Amount:</span>
-                  <span>${Number(selectedOrder.totalAmount || 0).toFixed(2)}</span>
+                  <span>₹{Number(selectedOrder.totalAmount || 0).toLocaleString('en-IN')}</span>
                 </div>
               </div>
 

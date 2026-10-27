@@ -24,6 +24,11 @@ router.post('/login', loginUser);
 // @access  Private
 router.get('/profile', protect, getUserProfile);
 
+// @route   GET /api/auth/me
+// @desc    Alias for retrieving current authenticated user profile
+// @access  Private
+router.get('/me', protect, getUserProfile);
+
 // @route   PUT /api/auth/profile
 // @desc    Update current user profile
 // @access  Private

@@ -19,11 +19,22 @@ import {
   X,
   Loader2,
   RefreshCw,
-  LogIn
+  LogIn,
+  Bike,
+  Compass,
+  Navigation,
+  Radio,
+  Battery,
+  Gauge,
+  ExternalLink,
+  Phone,
+  Maximize2,
+  Sparkles,
 } from 'lucide-react';
 import Container from '../components/Container';
 import Button from '../components/Button';
 import Badge from '../components/Badge';
+import LiveDeliveryMap from '../components/LiveDeliveryMap';
 import { useAuth } from '../context/AuthContext';
 import { orderService } from '../services/api';
 
@@ -47,6 +58,27 @@ function OrderStatusBadge({ status }) {
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-sky-50 text-sky-800 border border-sky-200 shadow-2xs">
           <CheckCircle2 size={12} className="text-sky-600" />
           <span>Confirmed</span>
+        </span>
+      );
+    case 'processing':
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-800 border border-blue-200 shadow-2xs">
+          <Clock size={12} className="text-blue-600" />
+          <span>Processing in Atelier</span>
+        </span>
+      );
+    case 'packed':
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-50 text-purple-800 border border-purple-200 shadow-2xs">
+          <PackageCheck size={12} className="text-purple-600" />
+          <span>Packed & Prepared</span>
+        </span>
+      );
+    case 'ready for pickup':
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-teal-50 text-teal-800 border border-teal-200 shadow-2xs">
+          <CheckCircle2 size={12} className="text-teal-600" />
+          <span>Ready for Courier Pickup</span>
         </span>
       );
     case 'shipped':
@@ -93,14 +125,17 @@ const normalizeOrder = (ord) => {
     quantity: Number(p.quantity) || 1,
     image: p.image || null,
     selectedSize: p.selectedSize || 'Standard',
+    store: p.store || null,
+    storeName: p.storeName || (p.store && typeof p.store === 'object' ? p.store.name : '') || '',
+    sku: p.sku || '',
   }));
 
   const itemsPrice =
     ord.itemsPrice ??
     ord.subtotal ??
     items.reduce((acc, it) => acc + (it.price || 0) * (it.quantity || 1), 0);
-  const shippingPrice = ord.shippingPrice ?? ord.shipping ?? (itemsPrice >= 200 ? 0 : 25);
-  const taxPrice = ord.taxPrice ?? ord.tax ?? Math.round(itemsPrice * 0.08);
+  const shippingPrice = ord.shippingPrice ?? ord.shipping ?? (itemsPrice >= 500 ? 0 : 25);
+  const taxPrice = ord.taxPrice ?? ord.tax ?? Math.round(itemsPrice * 0.08 * 100) / 100;
   const totalAmount = ord.totalAmount ?? ord.total ?? itemsPrice + shippingPrice + taxPrice;
   const status = ord.orderStatus || ord.status || 'Pending';
 
@@ -121,12 +156,19 @@ const normalizeOrder = (ord) => {
     taxPrice,
     items,
     products: rawProducts,
+    stores: ord.stores || [],
+    statusHistory: ord.statusHistory || [],
     paymentMethod: ord.paymentMethod || 'Online Payment',
-    paymentStatus: ord.paymentStatus || 'unpaid',
+    paymentStatus: ord.paymentStatus || 'pending',
     deliveryAddress: ord.deliveryAddress || null,
     customerName: ord.deliveryAddress?.fullName || ord.customerName || '',
     cancellationReason: ord.cancellationReason || '',
     cancelledAt: ord.cancelledAt || null,
+    deliveryBoy: ord.deliveryBoy || null,
+    deliveryBoySnapshot: ord.deliveryBoySnapshot || null,
+    deliveryStatus: ord.deliveryStatus || 'unassigned',
+    deliveryAssignedAt: ord.deliveryAssignedAt || null,
+    deliveryNotes: ord.deliveryNotes || '',
   };
 };
 
@@ -160,6 +202,49 @@ export default function Orders() {
 
   // Filter tab: 'all' | 'active' | 'completed' | 'cancelled'
   const [filterTab, setFilterTab] = useState('all');
+
+  // Live Radar Tracking Modal State
+  const [trackingModalOrder, setTrackingModalOrder] = useState(null);
+  const [trackingData, setTrackingData] = useState(null);
+  const [isFetchingTracking, setIsFetchingTracking] = useState(false);
+  const [autoTrackingPulse, setAutoTrackingPulse] = useState(true);
+
+  // Open live radar tracking modal
+  const handleOpenTrackingModal = async (order) => {
+    setTrackingModalOrder(order);
+    setTrackingData(null);
+    setIsFetchingTracking(true);
+    try {
+      const res = await orderService.getOrderTracking(order.id || order._id);
+      if (res && res.success) {
+        setTrackingData(res);
+      }
+    } catch (err) {
+      console.error('Failed to load tracking telemetry:', err);
+    } finally {
+      setIsFetchingTracking(false);
+    }
+  };
+
+  // Auto-refresh tracking radar while modal is open (every 6 seconds)
+  useEffect(() => {
+    if (!trackingModalOrder || !autoTrackingPulse) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await orderService.getOrderTracking(
+          trackingModalOrder.id || trackingModalOrder._id
+        );
+        if (res && res.success) {
+          setTrackingData(res);
+        }
+      } catch (err) {
+        console.error('Tracking poll error:', err);
+      }
+    }, 6000);
+
+    return () => clearInterval(interval);
+  }, [trackingModalOrder, autoTrackingPulse]);
 
   // Redirect to /login if user is not authenticated
   useEffect(() => {
@@ -243,10 +328,10 @@ export default function Orders() {
     return null;
   }
 
-  // Check if an order is eligible for cancellation (Only Pending or Confirmed)
+  // Check if an order is eligible for cancellation (Any order before Shipped, Delivered, or Cancelled)
   const isOrderEligibleForCancel = (status) => {
     const s = (status || '').toLowerCase();
-    return s === 'pending' || s === 'confirmed';
+    return !['shipped', 'delivered', 'cancelled'].includes(s);
   };
 
   // Open detailed modal and fetch freshest details from GET /api/orders/:id
@@ -316,7 +401,9 @@ export default function Orders() {
   // Filter orders based on active tab
   const filteredOrders = orders.filter((order) => {
     const s = (order.status || 'Pending').toLowerCase();
-    if (filterTab === 'active') return s === 'pending' || s === 'confirmed' || s === 'shipped';
+    if (filterTab === 'active') {
+      return ['pending', 'confirmed', 'processing', 'packed', 'ready for pickup', 'shipped'].includes(s);
+    }
     if (filterTab === 'completed') return s === 'delivered';
     if (filterTab === 'cancelled') return s === 'cancelled';
     return true; // 'all'
@@ -451,7 +538,7 @@ export default function Orders() {
               { id: 'all', label: `All Orders (${orders.length})` },
               {
                 id: 'active',
-                label: `Active (${orders.filter((o) => ['pending', 'confirmed', 'shipped'].includes((o.status || '').toLowerCase())).length})`,
+                label: `Active (${orders.filter((o) => ['pending', 'confirmed', 'processing', 'packed', 'ready for pickup', 'shipped'].includes((o.status || '').toLowerCase())).length})`,
               },
               {
                 id: 'completed',
@@ -643,12 +730,18 @@ export default function Orders() {
                               <p className="font-serif text-sm font-bold text-brand-black truncate">
                                 {item.name}
                               </p>
-                              <div className="flex items-center gap-2 text-xs text-brand-muted mt-0.5">
+                              <div className="flex flex-wrap items-center gap-2 text-xs text-brand-muted mt-0.5">
                                 <span>Qty: {item.quantity || 1}</span>
                                 {item.selectedSize && (
                                   <>
                                     <span>•</span>
                                     <span>Variant: {item.selectedSize}</span>
+                                  </>
+                                )}
+                                {item.storeName && (
+                                  <>
+                                    <span>•</span>
+                                    <span className="text-brand-accent font-medium">{item.storeName}</span>
                                   </>
                                 )}
                                 <span>•</span>
@@ -697,6 +790,112 @@ export default function Orders() {
                         )}
                       </div>
                     </div>
+
+                    {/* Delivery Boy Assignment & Live Radar Tracker Card */}
+                    {(order.deliveryBoy || order.deliveryBoySnapshot) && (
+                      <div
+                        className={`mt-4 p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs ${
+                          order.deliveryStatus === 'out_for_delivery' || order.deliveryStatus === 'accepted'
+                            ? 'bg-blue-50/80 border-blue-200 text-blue-950 shadow-2xs'
+                            : order.deliveryStatus === 'delivered'
+                            ? 'bg-emerald-50/80 border-emerald-200 text-emerald-950 shadow-2xs'
+                            : 'bg-amber-50/80 border-amber-200 text-amber-950 shadow-2xs'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 border ${
+                              order.deliveryStatus === 'out_for_delivery' || order.deliveryStatus === 'accepted'
+                                ? 'bg-blue-600 text-white border-blue-400 shadow-sm animate-pulse'
+                                : order.deliveryStatus === 'delivered'
+                                ? 'bg-emerald-600 text-white border-emerald-400 shadow-sm'
+                                : 'bg-amber-500/20 text-amber-800 border-amber-300'
+                            }`}
+                          >
+                            <Bike size={20} />
+                          </div>
+
+                          <div>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="font-bold text-brand-black text-sm">
+                                Courier: {order.deliveryBoy?.name || order.deliveryBoySnapshot?.name}
+                              </span>
+                              <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-white/80 border border-current text-brand-charcoal">
+                                {order.deliveryBoy?.vehicleNumber || order.deliveryBoySnapshot?.vehicleNumber || 'Store Courier'}
+                              </span>
+                            </div>
+
+                            <p className="text-[11px] text-brand-charcoal mt-1">
+                              {order.deliveryStatus === 'out_for_delivery' || order.deliveryStatus === 'accepted' ? (
+                                <span className="flex items-center gap-1.5 text-blue-700 font-semibold">
+                                  <span className="w-2 h-2 rounded-full bg-blue-600 animate-ping" />
+                                  <span>Out for delivery • Live GPS tracking radar active</span>
+                                </span>
+                              ) : order.deliveryStatus === 'delivered' ? (
+                                <span className="text-emerald-700 font-semibold">
+                                  ✓ Delivered successfully to your destination
+                                </span>
+                              ) : (
+                                <span className="text-amber-800 font-medium">
+                                  Assigned to rider • Waiting for courier to accept & start transit
+                                </span>
+                              )}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Tracking button & Call driver */}
+                        <div className="flex items-center gap-2 self-start sm:self-auto">
+                          {(order.deliveryBoy?.phone || order.deliveryBoySnapshot?.phone) && (
+                            <a
+                              href={`tel:${order.deliveryBoy?.phone || order.deliveryBoySnapshot?.phone}`}
+                              className="px-3 py-1.5 rounded-lg bg-white border border-brand-border hover:bg-brand-cream/50 text-brand-black text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                            >
+                              <Phone size={12} className="text-neutral-500" />
+                              <span>Call Rider</span>
+                            </a>
+                          )}
+
+                          {/* Track buttons: Quick Radar Modal and Full Page Dedicated Suite */}
+                          {order.deliveryStatus === 'out_for_delivery' || order.deliveryStatus === 'accepted' ? (
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => handleOpenTrackingModal(order)}
+                                className="px-3.5 py-1.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-cyan-300 border border-cyan-500/40 text-xs font-bold shadow-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                              >
+                                <Compass size={13} className="animate-spin text-cyan-400" />
+                                <span>Quick Radar</span>
+                              </button>
+                              <Link
+                                to={`/orders/${order.id}/track`}
+                                className="px-4 py-1.5 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white text-xs font-bold shadow-md shadow-cyan-600/25 flex items-center gap-1.5 transition-all"
+                              >
+                                <Sparkles size={12} className="text-cyan-200" />
+                                <span>Track Full Page ↗</span>
+                              </Link>
+                            </div>
+                          ) : order.deliveryStatus === 'assigned' ? (
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => handleOpenTrackingModal(order)}
+                                className="px-3 py-1.5 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                              >
+                                <Clock size={12} />
+                                <span>Radar Standby</span>
+                              </button>
+                              <Link
+                                to={`/orders/${order.id}/track`}
+                                className="px-3 py-1.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-amber-300 border border-amber-500/40 text-xs font-bold transition-all"
+                              >
+                                <span>Full Page ↗</span>
+                              </Link>
+                            </div>
+                          ) : null}
+                        </div>
+                      </div>
+                    )}
 
                     {/* Bottom Actions Row */}
                     <div className="pt-4 flex flex-wrap items-center justify-between gap-3">
@@ -815,6 +1014,56 @@ export default function Orders() {
                   </div>
                 )}
 
+                {/* Visual Order Progress Timeline */}
+                {selectedOrder.status !== 'Cancelled' && (
+                  <div className="p-4 rounded-xl bg-brand-surface border border-brand-border/70">
+                    <p className="text-[11px] uppercase tracking-wider font-semibold text-brand-muted mb-3">
+                      Courier Dispatch & Milestone Tracker
+                    </p>
+                    <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
+                      {[
+                        { key: 'Confirmed', label: 'Confirmed', desc: 'Atelier verified' },
+                        { key: 'Processing', label: 'Processing', desc: 'Preparing item' },
+                        { key: 'Packed', label: 'Packed', desc: 'Ready for courier' },
+                        { key: 'Shipped', label: 'In Transit', desc: 'Out for delivery' },
+                        { key: 'Delivered', label: 'Delivered', desc: 'Order completed' },
+                      ].map((step, idx) => {
+                        const stepOrder = ['Pending', 'Confirmed', 'Processing', 'Packed', 'Ready for Pickup', 'Shipped', 'Delivered'];
+                        const curIdx = stepOrder.indexOf(selectedOrder.status);
+                        const stepTargetIdx = step.key === 'Shipped' ? 5 : step.key === 'Packed' ? 3 : step.key === 'Processing' ? 2 : step.key === 'Confirmed' ? 1 : 6;
+                        const isDone = curIdx >= stepTargetIdx || (selectedOrder.status === 'Ready for Pickup' && step.key === 'Packed');
+                        const isCurrent = (step.key === 'Confirmed' && selectedOrder.status === 'Confirmed') ||
+                          (step.key === 'Processing' && selectedOrder.status === 'Processing') ||
+                          (step.key === 'Packed' && (selectedOrder.status === 'Packed' || selectedOrder.status === 'Ready for Pickup')) ||
+                          (step.key === 'Shipped' && selectedOrder.status === 'Shipped') ||
+                          (step.key === 'Delivered' && selectedOrder.status === 'Delivered');
+
+                        return (
+                          <div key={step.key} className="text-center">
+                            <div
+                              className={`w-7 h-7 mx-auto rounded-full flex items-center justify-center text-xs font-bold transition-all ${
+                                isDone
+                                  ? 'bg-emerald-600 text-white shadow-xs'
+                                  : isCurrent
+                                  ? 'bg-brand-black text-white ring-2 ring-brand-accent animate-pulse'
+                                  : 'bg-brand-offwhite text-brand-muted border border-brand-border'
+                              }`}
+                            >
+                              {isDone ? <CheckCircle2 size={14} /> : idx + 1}
+                            </div>
+                            <p className="text-[10px] sm:text-[11px] font-bold text-brand-black mt-1.5 leading-tight">
+                              {step.label}
+                            </p>
+                            <p className="text-[9px] text-brand-muted hidden sm:block mt-0.5">
+                              {step.desc}
+                            </p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 {/* Items Breakdown Table */}
                 <div>
                   <h4 className="text-xs uppercase tracking-wider font-semibold text-brand-charcoal mb-3">
@@ -835,11 +1084,17 @@ export default function Orders() {
                               <p className="font-serif text-xs sm:text-sm font-bold text-brand-black line-clamp-1">
                                 {item.name}
                               </p>
-                              <p className="text-[11px] text-brand-muted">
-                                ${typeof item.price === 'number' ? item.price.toLocaleString() : item.price}{' '}
-                                × {item.quantity || 1}
-                                {item.selectedSize && ` (${item.selectedSize})`}
-                              </p>
+                              <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-brand-muted mt-0.5">
+                                <span>
+                                  ${typeof item.price === 'number' ? item.price.toLocaleString() : item.price}{' '}
+                                  × {item.quantity || 1}
+                                </span>
+                                {item.selectedSize && <span>• {item.selectedSize}</span>}
+                                {item.sku && <span>• SKU: {item.sku}</span>}
+                                {item.storeName && (
+                                  <span className="text-brand-accent font-medium">• {item.storeName}</span>
+                                )}
+                              </div>
                             </div>
                           </div>
 
@@ -966,7 +1221,7 @@ export default function Orders() {
           <div
             role="alertdialog"
             aria-modal="true"
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-black/60 backdrop-blur-xs animate-in fade-in duration-200"
+            className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-brand-black/60 backdrop-blur-xs animate-in fade-in duration-200"
           >
             <div className="bg-brand-surface border border-brand-border/80 rounded-2xl w-full max-w-md p-6 shadow-2xl text-left animate-in zoom-in-95 duration-200">
               <div className="w-12 h-12 rounded-full bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center mb-4">
@@ -1027,7 +1282,237 @@ export default function Orders() {
             </div>
           </div>
         )}
+        {/* ========================================================================= */}
+        {/* LIVE DELIVERY RADAR TRACKING MODAL */}
+        {/* ========================================================================= */}
+        {trackingModalOrder && (
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="fixed inset-0 z-[60] flex items-center justify-center p-3 sm:p-4 bg-brand-black/70 backdrop-blur-sm animate-in fade-in duration-200"
+          >
+            <div className="bg-neutral-950 border border-neutral-800 rounded-3xl w-full max-w-2xl max-h-[92vh] overflow-y-auto shadow-2xl text-left animate-in zoom-in-95 duration-200 text-neutral-100">
+              {/* Modal Top Header */}
+              <div className="p-4 sm:p-5 border-b border-neutral-800 flex items-center justify-between bg-neutral-900/80">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/30 flex items-center justify-center font-bold">
+                    <Compass size={22} className="animate-spin text-blue-400" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-serif text-base font-bold text-white">
+                        Live Delivery Radar
+                      </h3>
+                      <span className="font-mono text-xs font-bold text-amber-400 bg-amber-400/10 px-1.5 py-0.5 rounded border border-amber-400/20">
+                        #ORD-{trackingModalOrder.id?.slice(-6).toUpperCase()}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-neutral-400">
+                      Real-time courier GPS tracking and dispatch route
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Link
+                    to={`/orders/${trackingModalOrder.id}/track`}
+                    className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 transition-all flex items-center gap-1"
+                    title="Open Fullscreen Dedicated Tracking Page"
+                  >
+                    <Maximize2 size={12} />
+                    <span>Full Page ↗</span>
+                  </Link>
+
+                  <button
+                    type="button"
+                    onClick={() => setAutoTrackingPulse((prev) => !prev)}
+                    className={`px-2.5 py-1 text-[11px] font-semibold rounded-lg border transition-all cursor-pointer ${
+                      autoTrackingPulse
+                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 font-bold'
+                        : 'bg-neutral-800 text-neutral-400 border-neutral-700'
+                    }`}
+                    title="Auto-refresh radar telemetry every 6 seconds"
+                  >
+                    <Radio size={11} className="inline mr-1 text-emerald-400 animate-pulse" />
+                    <span>{autoTrackingPulse ? 'Live Pulse' : 'Paused'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setTrackingModalOrder(null)}
+                    className="p-1.5 text-neutral-400 hover:text-white rounded-lg transition-colors cursor-pointer"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Modal Content */}
+              <div className="p-4 sm:p-6 space-y-4">
+                {isFetchingTracking && !trackingData ? (
+                  <div className="py-16 text-center">
+                    <RefreshCw size={24} className="animate-spin text-amber-500 mx-auto mb-2" />
+                    <p className="text-xs text-neutral-400">Connecting to courier RTK GPS telemetry...</p>
+                  </div>
+                ) : trackingData ? (
+                  <>
+                    {/* Status Notice Banner */}
+                    <div
+                      className={`p-3.5 rounded-2xl border text-xs flex items-center justify-between gap-3 ${
+                        trackingData.isTrackingActive
+                          ? 'bg-blue-950/60 border-blue-500/40 text-blue-200'
+                          : 'bg-amber-950/60 border-amber-500/40 text-amber-200'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <span
+                          className={`w-2.5 h-2.5 rounded-full ${
+                            trackingData.isTrackingActive
+                              ? 'bg-blue-500 animate-ping'
+                              : 'bg-amber-400'
+                          }`}
+                        />
+                        <span className="font-semibold">{trackingData.trackingNotice}</span>
+                      </div>
+
+                      {trackingData.deliveryBoy?.phone && (
+                        <a
+                          href={`tel:${trackingData.deliveryBoy.phone}`}
+                          className="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-white font-bold text-xs flex items-center gap-1 transition-colors"
+                        >
+                          <Phone size={11} />
+                          <span>Call Rider</span>
+                        </a>
+                      )}
+                    </div>
+
+                    {/* Driver Telemetry HUD */}
+                    {trackingData.deliveryBoy && (
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                        <div className="p-3 rounded-xl bg-neutral-900 border border-neutral-800">
+                          <span className="text-[10px] uppercase tracking-wider text-neutral-400 block font-semibold">
+                            Courier Partner
+                          </span>
+                          <p className="text-xs font-bold text-white mt-0.5 truncate">
+                            {trackingData.deliveryBoy.name}
+                          </p>
+                          <p className="text-[10px] text-neutral-400 font-mono">
+                            {trackingData.deliveryBoy.vehicleNumber || trackingData.deliveryBoy.vehicleType}
+                          </p>
+                        </div>
+
+                        <div className="p-3 rounded-xl bg-neutral-900 border border-neutral-800">
+                          <span className="text-[10px] uppercase tracking-wider text-neutral-400 block font-semibold">
+                            Speedometer
+                          </span>
+                          <p className="font-mono text-xs font-bold text-blue-400 mt-0.5 flex items-center gap-1">
+                            <Gauge size={13} />
+                            <span>{trackingData.deliveryBoy.currentLocation?.speed || 0} km/h</span>
+                          </p>
+                          <p className="text-[10px] text-neutral-400">Moving</p>
+                        </div>
+
+                        <div className="p-3 rounded-xl bg-neutral-900 border border-neutral-800">
+                          <span className="text-[10px] uppercase tracking-wider text-neutral-400 block font-semibold">
+                            Device Battery
+                          </span>
+                          <p className="font-mono text-xs font-bold text-emerald-400 mt-0.5 flex items-center gap-1">
+                            <Battery size={13} />
+                            <span>{trackingData.deliveryBoy.currentLocation?.batteryLevel || 85}%</span>
+                          </p>
+                          <p className="text-[10px] text-neutral-400">RTK Connected</p>
+                        </div>
+
+                        <div className="p-3 rounded-xl bg-neutral-900 border border-neutral-800">
+                          <span className="text-[10px] uppercase tracking-wider text-neutral-400 block font-semibold">
+                            Estimated ETA
+                          </span>
+                          <p className="font-mono text-xs font-bold text-amber-400 mt-0.5 flex items-center gap-1">
+                            <Clock size={13} />
+                            <span>
+                              {trackingData.isTrackingActive ? '~10-15 mins' : 'Standby'}
+                            </span>
+                          </p>
+                          <p className="text-[10px] text-neutral-400">2.1 km away</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* ================================================================= */}
+                    {/* VISUAL LIVE RADAR MAP COMPONENT */}
+                    {/* ================================================================= */}
+                    <div className="rounded-3xl border-2 border-black shadow-2xl overflow-hidden p-0.5 bg-black ring-1 ring-black/80">
+                      <LiveDeliveryMap
+                        storeHub={trackingData.storeHub}
+                        customerDestination={trackingData.customerDestination}
+                        deliveryBoy={trackingData.deliveryBoy}
+                        isTrackingActive={trackingData.isTrackingActive}
+                        trackingNotice={trackingData.trackingNotice}
+                        height="h-96 sm:h-[460px]"
+                        showControls={true}
+                        orderNumber={trackingModalOrder.id || trackingModalOrder._id}
+                      />
+                    </div>
+
+                    {/* Current Landmark Address & Direct Navigation */}
+                    <div className="p-3.5 rounded-2xl bg-neutral-900 border border-neutral-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                      <div>
+                        <span className="text-[10px] uppercase tracking-wider text-neutral-400 block font-semibold flex items-center gap-1">
+                          <MapPin size={11} className="text-amber-400" />
+                          <span>Courier Last Verified Location</span>
+                        </span>
+                        <p className="text-neutral-200 font-medium mt-0.5">
+                          {trackingData.deliveryBoy?.currentLocation?.address || 'Near 56 Dukan Gourmet Square'}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+                        {trackingData.deliveryBoy?.phone && (
+                          <a
+                            href={`tel:${trackingData.deliveryBoy.phone}`}
+                            className="px-3 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 font-semibold flex items-center gap-1.5 transition-colors border border-cyan-500/30"
+                          >
+                            <Phone size={12} />
+                            <span>Call Courier</span>
+                          </a>
+                        )}
+                        <a
+                          href={`https://www.google.com/maps/dir/?api=1&origin=${trackingData.deliveryBoy?.currentLocation?.latitude || 22.7196},${trackingData.deliveryBoy?.currentLocation?.longitude || 75.8577}&destination=${encodeURIComponent(
+                            trackingData.customerDestination?.address || 'Indore'
+                          )}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold flex items-center gap-1.5 transition-colors border border-white/10"
+                        >
+                          <ExternalLink size={12} />
+                          <span>Google Maps</span>
+                        </a>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-xs text-neutral-400 py-8 text-center">
+                    Unable to load tracking telemetry.
+                  </p>
+                )}
+              </div>
+
+              {/* Modal Footer */}
+              <div className="p-4 sm:p-5 border-t border-neutral-800 flex items-center justify-end bg-neutral-900/80">
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => setTrackingModalOrder(null)}
+                  className="bg-white text-neutral-950 font-bold hover:bg-neutral-200"
+                >
+                  Close Radar
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </Container>
     </div>
   );
 }
+

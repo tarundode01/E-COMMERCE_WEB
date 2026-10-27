@@ -622,7 +622,9 @@ export default function Shop({ onAddToCart, onToggleWishlist }) {
 
                 {/* Dynamically fetched backend categories */}
                 {availableCategories.map((cat) => {
-                  const isSelected = selectedCategory === cat;
+                  const isSelected =
+                    selectedCategory.toLowerCase() === cat.toLowerCase() ||
+                    selectedCategory.toLowerCase() === cat.toLowerCase().replace(/\s+/g, '-');
                   return (
                     <button
                       key={cat}

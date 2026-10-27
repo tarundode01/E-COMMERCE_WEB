@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 
 /**
  * Order Item Sub-schema
- * Stores snapshot of purchased product, trusted unit price, quantity, and variant
+ * Stores snapshot of purchased product, trusted unit price, quantity, store, and variant
  */
 const orderItemSchema = new mongoose.Schema({
   product: {
@@ -37,6 +37,48 @@ const orderItemSchema = new mongoose.Schema({
     type: String,
     default: 'Standard',
     trim: true,
+  },
+  // Multi-vendor association & historical snapshots
+  store: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Store',
+    index: true,
+    default: null,
+  },
+  storeName: {
+    type: String,
+    trim: true,
+    default: '',
+  },
+  vendor: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    index: true,
+    default: null,
+  },
+  sku: {
+    type: String,
+    uppercase: true,
+    trim: true,
+    default: '',
+  },
+  discount: {
+    type: Number,
+    default: 0,
+    min: [0, 'Discount cannot be negative'],
+  },
+  subtotal: {
+    type: Number,
+    min: [0, 'Subtotal cannot be negative'],
+    default: 0,
+  },
+  isRestocked: {
+    type: Boolean,
+    default: false,
+  },
+  restockedAt: {
+    type: Date,
+    default: null,
   },
 });
 
@@ -84,7 +126,7 @@ const deliveryAddressSchema = new mongoose.Schema({
 
 /**
  * Order Schema
- * Represents a customer acquisition in the luxury store
+ * Represents a customer acquisition in the luxury store with multi-vendor support
  */
 const orderSchema = new mongoose.Schema(
   {
@@ -92,6 +134,7 @@ const orderSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: [true, 'Customer reference is required'],
+      index: true,
     },
     products: {
       type: [orderItemSchema],
@@ -100,6 +143,21 @@ const orderSchema = new mongoose.Schema(
         validator: (items) => Array.isArray(items) && items.length > 0,
         message: 'Order must contain at least one product',
       },
+    },
+    // Distinct store IDs involved in this order for fast multi-vendor queries
+    stores: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Store',
+        index: true,
+      },
+    ],
+    // Idempotency key to safely prevent duplicate order creation on network retries
+    idempotencyKey: {
+      type: String,
+      trim: true,
+      sparse: true,
+      index: true,
     },
     deliveryAddress: {
       type: deliveryAddressSchema,
@@ -113,7 +171,15 @@ const orderSchema = new mongoose.Schema(
     paymentStatus: {
       type: String,
       enum: ['unpaid', 'paid', 'pending', 'refunded'],
-      default: 'unpaid',
+      default: 'pending',
+      index: true,
+    },
+    isPaid: {
+      type: Boolean,
+      default: false,
+    },
+    paidAt: {
+      type: Date,
     },
     itemsPrice: {
       type: Number,
@@ -141,8 +207,13 @@ const orderSchema = new mongoose.Schema(
     orderStatus: {
       type: String,
       required: true,
-      enum: ['Pending', 'Confirmed', 'Shipped', 'Delivered', 'Cancelled'],
+      enum: ['Pending', 'Confirmed', 'Processing', 'Packed', 'Ready for Pickup', 'Shipped', 'Delivered', 'Cancelled'],
       default: 'Pending',
+      index: true,
+    },
+    isStockRestocked: {
+      type: Boolean,
+      default: false,
     },
     cancellationReason: {
       type: String,
@@ -154,12 +225,53 @@ const orderSchema = new mongoose.Schema(
     deliveredAt: {
       type: Date,
     },
+    // Vendor Delivery Boy Assignment & Telemetry Tracking
+    deliveryBoy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'DeliveryBoy',
+      index: true,
+      default: null,
+    },
+    deliveryBoySnapshot: {
+      name: { type: String, trim: true, default: '' },
+      phone: { type: String, trim: true, default: '' },
+      vehicleType: { type: String, trim: true, default: '' },
+      vehicleNumber: { type: String, trim: true, default: '' },
+    },
+    deliveryStatus: {
+      type: String,
+      enum: ['unassigned', 'assigned', 'picked_up', 'out_for_delivery', 'delivered'],
+      default: 'unassigned',
+      index: true,
+    },
+    deliveryAssignedAt: {
+      type: Date,
+      default: null,
+    },
+    deliveryNotes: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    deliveryOtp: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    cashCollected: {
+      type: Number,
+      default: 0,
+    },
     statusHistory: [
       {
         status: {
           type: String,
           required: true,
-          enum: ['Pending', 'Confirmed', 'Shipped', 'Delivered', 'Cancelled'],
+          enum: ['Pending', 'Confirmed', 'Processing', 'Packed', 'Ready for Pickup', 'Shipped', 'Delivered', 'Cancelled'],
+        },
+        previousStatus: {
+          type: String,
+          trim: true,
         },
         changedAt: {
           type: Date,
@@ -178,8 +290,22 @@ const orderSchema = new mongoose.Schema(
   },
   {
     timestamps: true, // Automatically manages createdAt and updatedAt
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
   }
 );
+
+// Virtual alias: orderItems maps to products
+orderSchema.virtual('orderItems').get(function () {
+  return this.products;
+});
+
+// Database indexes for fast querying and isolation
+orderSchema.index({ customer: 1, createdAt: -1 });
+orderSchema.index({ stores: 1, createdAt: -1 });
+orderSchema.index({ 'products.store': 1, createdAt: -1 });
+orderSchema.index({ 'products.vendor': 1, createdAt: -1 });
+orderSchema.index({ orderStatus: 1, createdAt: -1 });
 
 // Format JSON response to include virtual id and remove internal fields
 orderSchema.methods.toJSON = function () {

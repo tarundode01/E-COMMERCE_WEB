@@ -18,12 +18,16 @@ import {
   ShieldAlert,
   LogIn,
   User,
+  Users,
   Phone,
   Mail,
   SlidersHorizontal,
   ArrowRight,
   FileText,
-  AlertCircle
+  AlertCircle,
+  Store,
+  TrendingUp,
+  Package
 } from 'lucide-react';
 import AdminLayout from '../components/AdminLayout';
 import Button from '../components/Button';
@@ -31,6 +35,7 @@ import Input from '../components/Input';
 import Badge from '../components/Badge';
 import { orderService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { formatImageUrl } from '../utils/imageUrl';
 
 const VALID_ORDER_STATUSES = ['Pending', 'Confirmed', 'Shipped', 'Delivered', 'Cancelled'];
 
@@ -100,14 +105,30 @@ const normalizeOrder = (ord) => {
   if (!ord) return null;
   const orderId = ord._id || ord.id || 'N/A';
   const rawProducts = ord.products || ord.items || [];
-  const items = rawProducts.map((p) => ({
-    id: p.product?._id || p.product || p.productId || p.id || p._id || orderId,
-    name: p.name || 'Signature Item',
-    price: typeof p.price === 'number' ? p.price : 0,
-    quantity: Number(p.quantity) || 1,
-    image: p.image || null,
-    selectedSize: p.selectedSize || 'Standard',
-  }));
+  const items = rawProducts.map((p) => {
+    const storeObj = p.store && typeof p.store === 'object' ? p.store : null;
+    const vendorObj = p.vendor && typeof p.vendor === 'object' ? p.vendor : null;
+    const resolvedStoreName =
+      p.storeName ||
+      storeObj?.name ||
+      (ord.stores && ord.stores[0]?.name) ||
+      'Patel Optical Signature';
+
+    return {
+      id: p.product?._id || p.product || p.productId || p.id || p._id || orderId,
+      name: p.name || p.product?.title || 'Signature Item',
+      price: typeof p.price === 'number' ? p.price : 0,
+      quantity: Number(p.quantity) || 1,
+      image: p.image || p.product?.images?.[0] || null,
+      selectedSize: p.selectedSize || 'Standard',
+      store: p.store,
+      storeName: resolvedStoreName,
+      storeId: storeObj?._id || p.store || null,
+      vendor: p.vendor,
+      vendorName: vendorObj?.name || null,
+      vendorEmail: vendorObj?.email || null,
+    };
+  });
 
   const itemsPrice =
     ord.itemsPrice ??
@@ -135,6 +156,8 @@ const normalizeOrder = (ord) => {
     taxPrice,
     items,
     products: rawProducts,
+    stores: ord.stores || [],
+    deliveryBoy: ord.deliveryBoy || null,
     paymentMethod: ord.paymentMethod || 'Online Payment',
     paymentStatus: ord.paymentStatus || 'unpaid',
     deliveryAddress: ord.deliveryAddress || null,
@@ -180,6 +203,7 @@ export default function AdminOrders() {
   // Search & Filter State
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
+  const [storeFilter, setStoreFilter] = useState('All');
   const [sortBy, setSortBy] = useState('newest'); // 'newest' | 'oldest' | 'highest' | 'lowest'
 
   // Modal State for Order Details
@@ -292,6 +316,39 @@ export default function AdminOrders() {
     };
   }, [isAdmin, logout, navigate, showToast]);
 
+  // Unique Stores for filtering
+  const availableStores = useMemo(() => {
+    const storeSet = new Set();
+    ordersList.forEach((ord) => {
+      ord.items.forEach((it) => {
+        if (it.storeName) storeSet.add(it.storeName);
+      });
+    });
+    return Array.from(storeSet).sort();
+  }, [ordersList]);
+
+  // Executive Top-level KPI Metrics
+  const metrics = useMemo(() => {
+    let totalSales = 0;
+    const vendorSet = new Set();
+    const customerSet = new Set();
+
+    ordersList.forEach((ord) => {
+      totalSales += Number(ord.total || 0);
+      if (ord.customerEmail) customerSet.add(ord.customerEmail);
+      ord.items.forEach((it) => {
+        if (it.storeName) vendorSet.add(it.storeName);
+      });
+    });
+
+    return {
+      totalSales,
+      totalOrders: ordersList.length,
+      uniqueCustomers: customerSet.size,
+      activeVendors: vendorSet.size,
+    };
+  }, [ordersList]);
+
   // Filtered & Sorted Orders
   const filteredOrders = useMemo(() => {
     return ordersList
@@ -304,13 +361,23 @@ export default function AdminOrders() {
           order.customerName.toLowerCase().includes(q) ||
           order.customerEmail.toLowerCase().includes(q) ||
           order.customerPhone.includes(q) ||
-          (order.deliveryAddress?.city && order.deliveryAddress.city.toLowerCase().includes(q));
+          (order.deliveryAddress?.city && order.deliveryAddress.city.toLowerCase().includes(q)) ||
+          order.items.some(
+            (it) =>
+              it.name.toLowerCase().includes(q) ||
+              (it.storeName && it.storeName.toLowerCase().includes(q)) ||
+              (it.vendorName && it.vendorName.toLowerCase().includes(q))
+          );
 
         const matchesStatus =
           statusFilter === 'All' ||
           (order.status || '').toLowerCase() === statusFilter.toLowerCase();
 
-        return matchesSearch && matchesStatus;
+        const matchesStore =
+          storeFilter === 'All' ||
+          order.items.some((it) => it.storeName === storeFilter);
+
+        return matchesSearch && matchesStatus && matchesStore;
       })
       .sort((a, b) => {
         if (sortBy === 'newest') {
@@ -327,7 +394,7 @@ export default function AdminOrders() {
         }
         return 0;
       });
-  }, [ordersList, searchQuery, statusFilter, sortBy]);
+  }, [ordersList, searchQuery, statusFilter, storeFilter, sortBy]);
 
   // Status Counts for Tabs
   const statusCounts = useMemo(() => {
@@ -558,15 +625,91 @@ export default function AdminOrders() {
           )}
 
           {/* ========================================================================= */}
-          {/* 3. SEARCH & STATUS FILTER TABS */}
+          {/* 3. EXECUTIVE KPI METRICS RIBBON */}
+          {/* ========================================================================= */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-brand-surface border border-brand-border/70 rounded-2xl p-4 sm:p-5 shadow-xs relative overflow-hidden">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-amber-700">
+                  Total Order Sales (₹)
+                </span>
+                <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center">
+                  <TrendingUp size={16} />
+                </div>
+              </div>
+              <div className="mt-3 flex items-baseline gap-1.5">
+                <span className="text-2xl sm:text-3xl font-serif font-black text-brand-black">
+                  ₹{Number(metrics.totalSales || 0).toLocaleString('en-IN')}
+                </span>
+              </div>
+              <p className="text-[10px] text-neutral-400 mt-1">Total revenue across all customer acquisitions</p>
+            </div>
+
+            <div className="bg-brand-surface border border-brand-border/70 rounded-2xl p-4 sm:p-5 shadow-xs relative overflow-hidden">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-600">
+                  Total Catalog Orders
+                </span>
+                <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
+                  <Package size={16} />
+                </div>
+              </div>
+              <div className="mt-3 flex items-baseline gap-2">
+                <span className="text-2xl sm:text-3xl font-serif font-black text-emerald-700">
+                  {metrics.totalOrders}
+                </span>
+                <span className="text-[11px] font-semibold text-emerald-600">bookings</span>
+              </div>
+              <p className="text-[10px] text-neutral-400 mt-1">Total orders registered on platform</p>
+            </div>
+
+            <div className="bg-brand-surface border border-brand-border/70 rounded-2xl p-4 sm:p-5 shadow-xs relative overflow-hidden">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-600">
+                  Active Vendor Stores
+                </span>
+                <div className="w-8 h-8 rounded-xl bg-indigo-500/10 text-indigo-600 flex items-center justify-center">
+                  <Store size={16} />
+                </div>
+              </div>
+              <div className="mt-3 flex items-baseline gap-2">
+                <span className="text-2xl sm:text-3xl font-serif font-black text-indigo-700">
+                  {metrics.activeVendors}
+                </span>
+                <span className="text-[11px] font-semibold text-indigo-600">merchants</span>
+              </div>
+              <p className="text-[10px] text-neutral-400 mt-1">Stores with active products ordered</p>
+            </div>
+
+            <div className="bg-brand-surface border border-brand-border/70 rounded-2xl p-4 sm:p-5 shadow-xs relative overflow-hidden">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-500">
+                  Unique Patrons
+                </span>
+                <div className="w-8 h-8 rounded-xl bg-neutral-200/60 text-neutral-600 flex items-center justify-center">
+                  <Users size={16} />
+                </div>
+              </div>
+              <div className="mt-3 flex items-baseline gap-2">
+                <span className="text-2xl sm:text-3xl font-serif font-black text-brand-black">
+                  {metrics.uniqueCustomers}
+                </span>
+                <span className="text-[11px] font-medium text-neutral-400">clients</span>
+              </div>
+              <p className="text-[10px] text-neutral-400 mt-1">Verified buyer patron accounts</p>
+            </div>
+          </div>
+
+          {/* ========================================================================= */}
+          {/* 4. SEARCH & STATUS FILTER TABS */}
           {/* ========================================================================= */}
           <div className="bg-brand-surface border border-brand-border/70 rounded-2xl p-5 shadow-xs space-y-4">
-            {/* Search Row & Sort Controls */}
-            <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
+            {/* Search Row, Store Filter & Sort Controls */}
+            <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between">
               <div className="relative flex-1">
                 <Input
                   type="text"
-                  placeholder="Search by Order ID, Client Name, Email, Phone, or City..."
+                  placeholder="Search by Order ID, Client, Product, Vendor/Store, City..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   icon={Search}
@@ -583,7 +726,26 @@ export default function AdminOrders() {
                 )}
               </div>
 
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+                {/* Vendor / Store Filter Dropdown */}
+                <div className="flex items-center gap-1.5 text-xs text-brand-muted font-medium">
+                  <Store size={14} className="text-amber-600" />
+                  <span>Vendor:</span>
+                </div>
+                <select
+                  value={storeFilter}
+                  onChange={(e) => setStoreFilter(e.target.value)}
+                  className="bg-brand-offwhite border border-brand-border text-xs font-semibold text-brand-black px-3 py-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-brand-black cursor-pointer max-w-[190px]"
+                >
+                  <option value="All">All Vendors & Stores ({availableStores.length})</option>
+                  {availableStores.map((st) => (
+                    <option key={st} value={st}>
+                      {st}
+                    </option>
+                  ))}
+                </select>
+
+                {/* Sort Dropdown */}
                 <div className="flex items-center gap-1.5 text-xs text-brand-muted font-medium">
                   <SlidersHorizontal size={14} className="text-brand-accent" />
                   <span>Sort:</span>
@@ -686,8 +848,9 @@ export default function AdminOrders() {
                     <tr className="bg-brand-offwhite/80 border-b border-brand-border/70 text-[11px] uppercase tracking-wider font-semibold text-brand-muted">
                       <th className="py-3.5 px-4 sm:px-6">Order Reference</th>
                       <th className="py-3.5 px-4">Client Dossier</th>
+                      <th className="py-3.5 px-4 min-w-[240px]">Purchased Items & Vendor</th>
                       <th className="py-3.5 px-4">Date Placed</th>
-                      <th className="py-3.5 px-4">Total Amount</th>
+                      <th className="py-3.5 px-4">Total Amount (₹)</th>
                       <th className="py-3.5 px-4">Payment Method</th>
                       <th className="py-3.5 px-4">Fulfillment Status</th>
                       <th className="py-3.5 px-4">Update Status</th>
@@ -743,6 +906,48 @@ export default function AdminOrders() {
                             )}
                           </td>
 
+                          {/* Purchased Items & Associated Vendor */}
+                          <td className="py-4 px-4 min-w-[240px]">
+                            <div className="space-y-2">
+                              {order.items.slice(0, 2).map((it, idx) => (
+                                <div key={idx} className="flex items-center gap-2">
+                                  <img
+                                    src={formatImageUrl(it.image)}
+                                    alt={it.name}
+                                    className="w-8 h-8 rounded-lg object-cover bg-brand-offwhite border border-brand-border shrink-0"
+                                    onError={(e) => {
+                                      e.target.style.display = 'none';
+                                    }}
+                                  />
+                                  <div className="min-w-0 flex-1">
+                                    <div className="font-semibold text-brand-black truncate text-xs">
+                                      {it.name}{' '}
+                                      <span className="text-brand-muted font-normal">
+                                        ×{it.quantity}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-1 mt-0.5">
+                                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-900 border border-amber-200/80">
+                                        <Store size={10} className="text-amber-700 shrink-0" />
+                                        <span className="truncate max-w-[130px]">{it.storeName}</span>
+                                      </span>
+                                      {it.vendorName && (
+                                        <span className="text-[10px] text-neutral-400 truncate max-w-[90px]">
+                                          ({it.vendorName})
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                              {order.items.length > 2 && (
+                                <div className="text-[10px] text-brand-muted font-medium pl-1">
+                                  +{order.items.length - 2} more item{order.items.length - 2 > 1 ? 's' : ''}
+                                </div>
+                              )}
+                            </div>
+                          </td>
+
                           {/* Order Date */}
                           <td className="py-4 px-4 text-xs text-brand-charcoal whitespace-nowrap">
                             {dateStr}
@@ -750,7 +955,7 @@ export default function AdminOrders() {
 
                           {/* Total Amount */}
                           <td className="py-4 px-4 font-serif font-bold text-brand-black text-sm whitespace-nowrap">
-                            ${Number(order.total || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            ₹{Number(order.total || 0).toLocaleString('en-IN')}
                           </td>
 
                           {/* Payment Method */}
@@ -1143,28 +1348,37 @@ export default function AdminOrders() {
                     return (
                       <div key={idx} className="p-3.5 flex items-center justify-between gap-3 text-xs">
                         <div className="flex items-center gap-3">
-                          {item.image ? (
-                            <img
-                              src={item.image}
-                              alt={item.name}
-                              className="w-12 h-12 rounded-lg object-cover bg-brand-offwhite border border-brand-border shrink-0"
-                            />
-                          ) : (
-                            <div className="w-12 h-12 rounded-lg bg-brand-offwhite border border-brand-border flex items-center justify-center text-brand-muted shrink-0">
-                              <ShoppingBag size={18} />
-                            </div>
-                          )}
+                          <img
+                            src={formatImageUrl(item.image)}
+                            alt={item.name}
+                            className="w-12 h-12 rounded-lg object-cover bg-brand-offwhite border border-brand-border shrink-0"
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                            }}
+                          />
                           <div>
                             <p className="font-serif font-bold text-brand-black">{item.name}</p>
                             <p className="text-brand-muted text-[11px]">
-                              Qty: {item.quantity} {item.selectedSize && `• Size: ${item.selectedSize}`}
+                              Qty: {item.quantity} {item.selectedSize && `• Size: ${item.selectedSize}`} • ₹{Number(item.price || 0).toLocaleString('en-IN')} each
                             </p>
+                            {/* Vendor & Store Attribution Badge */}
+                            <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-50 text-amber-900 border border-amber-200">
+                                <Store size={11} className="text-amber-700" />
+                                <span>Vendor Store: {item.storeName}</span>
+                              </span>
+                              {item.vendorName && (
+                                <span className="text-[10px] text-neutral-500 font-medium">
+                                  (Vendor: {item.vendorName})
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
 
                         <div className="text-right">
-                          <span className="font-serif font-bold text-brand-black">
-                            ${Number(lineTotal || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          <span className="font-serif font-bold text-brand-black text-sm">
+                            ₹{Number(lineTotal || 0).toLocaleString('en-IN')}
                           </span>
                         </div>
                       </div>
@@ -1197,21 +1411,21 @@ export default function AdminOrders() {
                 <div className="p-4 rounded-xl bg-brand-cream/40 border border-brand-border/70 text-xs space-y-2">
                   <div className="flex justify-between text-brand-charcoal">
                     <span>Items Subtotal:</span>
-                    <span className="font-semibold">${Number(selectedOrder.itemsPrice || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    <span className="font-semibold">₹{Number(selectedOrder.itemsPrice || 0).toLocaleString('en-IN')}</span>
                   </div>
                   <div className="flex justify-between text-brand-charcoal">
                     <span>Express Shipping:</span>
                     <span className="font-semibold text-emerald-800">
-                      {selectedOrder.shippingPrice === 0 ? 'Complimentary' : `$${Number(selectedOrder.shippingPrice || 0).toFixed(2)}`}
+                      {selectedOrder.shippingPrice === 0 ? 'Complimentary' : `₹${Number(selectedOrder.shippingPrice || 0).toLocaleString('en-IN')}`}
                     </span>
                   </div>
                   <div className="flex justify-between text-brand-charcoal">
                     <span>Luxury Tax (8%):</span>
-                    <span className="font-semibold">${Number(selectedOrder.taxPrice || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    <span className="font-semibold">₹{Number(selectedOrder.taxPrice || 0).toLocaleString('en-IN')}</span>
                   </div>
                   <div className="pt-2 border-t border-brand-border/60 flex justify-between font-bold text-sm text-brand-black">
                     <span>Verified Grand Total:</span>
-                    <span className="font-serif text-base">${Number(selectedOrder.total || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    <span className="font-serif text-base">₹{Number(selectedOrder.total || 0).toLocaleString('en-IN')}</span>
                   </div>
                 </div>
               </div>

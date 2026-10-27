@@ -20,7 +20,9 @@ import {
   Lock,
   MessageSquare,
   X,
-  ArrowRight
+  ArrowRight,
+  Store,
+  ExternalLink
 } from 'lucide-react';
 import Container from '../components/Container';
 import Button from '../components/Button';
@@ -32,6 +34,7 @@ import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useAuth } from '../context/AuthContext';
 import { reviewService, productService } from '../services/api';
+import { formatImageUrl } from '../utils/imageUrl';
 
 /**
  * Inner component keyed by product.id to automatically reset state on navigation
@@ -44,10 +47,8 @@ function ProductDetailsContent({ product, onAddToCart, onToggleWishlist }) {
   const productId = product._id || product.id;
 
   const galleryImages = useMemo(() => {
-    if (product.images && product.images.length > 0) {
-      return product.images;
-    }
-    return [product.image];
+    const raw = (product.images && product.images.length > 0) ? product.images : [product.image];
+    return raw.filter(Boolean).map(formatImageUrl);
   }, [product]);
 
   const [activeImageIndex, setActiveImageIndex] = useState(0);
@@ -346,11 +347,10 @@ function ProductDetailsContent({ product, onAddToCart, onToggleWishlist }) {
                       key={index}
                       type="button"
                       onClick={() => setActiveImageIndex(index)}
-                      className={`relative aspect-square w-18 sm:w-full rounded-lg overflow-hidden border-2 transition-all cursor-pointer bg-brand-surface ${
-                        isActive
+                      className={`relative aspect-square w-18 sm:w-full rounded-lg overflow-hidden border-2 transition-all cursor-pointer bg-brand-surface ${isActive
                           ? 'border-brand-black ring-2 ring-brand-accent/50 scale-95 shadow-sm'
                           : 'border-brand-border/80 hover:border-brand-charcoal opacity-75 hover:opacity-100'
-                      }`}
+                        }`}
                     >
                       <img
                         src={imgSrc}
@@ -404,6 +404,34 @@ function ProductDetailsContent({ product, onAddToCart, onToggleWishlist }) {
             <h1 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-brand-black leading-tight mb-3">
               {product.name}
             </h1>
+
+            {/* Atelier / Seller Information */}
+            {product.store && (
+              <div className="mb-4 p-3 rounded-xl bg-brand-cream/50 border border-brand-border/70 flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-brand-black text-brand-accent flex items-center justify-center text-xs shrink-0 shadow-2xs">
+                    <Store size={15} />
+                  </div>
+                  <div className="text-left">
+                    <span className="text-[10px] uppercase font-bold text-brand-muted tracking-wider block">
+                      Curated Atelier & Merchant
+                    </span>
+                    <span className="text-xs font-bold text-brand-black">
+                      {typeof product.store === 'object' ? product.store.name : product.store}
+                    </span>
+                  </div>
+                </div>
+                {typeof product.store === 'object' && product.store.slug && (
+                  <Link
+                    to={`/store/${product.store.slug}`}
+                    className="text-xs font-semibold text-brand-accent hover:underline flex items-center gap-1"
+                  >
+                    <span>Visit Atelier</span>
+                    <ExternalLink size={12} />
+                  </Link>
+                )}
+              </div>
+            )}
 
             {/* Star Rating & Review Count - Real API Data Only (Never Hardcoded) */}
             <div className="flex items-center gap-2 mb-5">
@@ -504,11 +532,10 @@ function ProductDetailsContent({ product, onAddToCart, onToggleWishlist }) {
                         key={size}
                         type="button"
                         onClick={() => setSelectedSize(size)}
-                        className={`px-4 py-2 text-xs font-semibold tracking-wider uppercase transition-all rounded-md cursor-pointer border ${
-                          isSelected
+                        className={`px-4 py-2 text-xs font-semibold tracking-wider uppercase transition-all rounded-md cursor-pointer border ${isSelected
                             ? 'bg-brand-black text-white border-brand-black shadow-xs'
                             : 'bg-brand-surface text-brand-charcoal border-brand-border hover:border-brand-black'
-                        }`}
+                          }`}
                       >
                         {size}
                       </button>
@@ -562,11 +589,10 @@ function ProductDetailsContent({ product, onAddToCart, onToggleWishlist }) {
               <button
                 type="button"
                 onClick={handleWishlistToggle}
-                className={`w-full py-2.5 px-4 rounded-lg border text-xs font-semibold uppercase tracking-wider transition-colors flex items-center justify-center gap-2 cursor-pointer focus:outline-none ${
-                  isWishlisted
+                className={`w-full py-2.5 px-4 rounded-lg border text-xs font-semibold uppercase tracking-wider transition-colors flex items-center justify-center gap-2 cursor-pointer focus:outline-none ${isWishlisted
                     ? 'border-rose-300 bg-rose-50/60 text-rose-600'
                     : 'border-brand-border bg-brand-surface text-brand-charcoal hover:border-brand-charcoal'
-                }`}
+                  }`}
               >
                 <Heart size={16} className={isWishlisted ? 'fill-rose-600 text-rose-600' : ''} />
                 <span>{isWishlisted ? 'Saved in Wishlist' : 'Add to Wishlist'}</span>
@@ -656,9 +682,8 @@ function ProductDetailsContent({ product, onAddToCart, onToggleWishlist }) {
                     </div>
                     <span className="text-xs font-medium text-brand-charcoal">
                       {reviewStats.reviewCount > 0
-                        ? `Based on ${reviewStats.reviewCount} verified ${
-                            reviewStats.reviewCount === 1 ? 'review' : 'reviews'
-                          }`
+                        ? `Based on ${reviewStats.reviewCount} verified ${reviewStats.reviewCount === 1 ? 'review' : 'reviews'
+                        }`
                         : 'No reviews submitted yet'}
                     </span>
                   </div>
@@ -729,10 +754,10 @@ function ProductDetailsContent({ product, onAddToCart, onToggleWishlist }) {
                       <span className="text-xs text-brand-muted">
                         {myReview.createdAt
                           ? new Date(myReview.createdAt).toLocaleDateString('en-US', {
-                              month: 'short',
-                              day: 'numeric',
-                              year: 'numeric',
-                            })
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric',
+                          })
                           : ''}
                       </span>
                     </div>
@@ -812,28 +837,26 @@ function ProductDetailsContent({ product, onAddToCart, onToggleWishlist }) {
                     {/* Form Feedback Alerts */}
                     {formFeedback && (
                       <div
-                        className={`p-3.5 rounded-xl text-xs flex items-start gap-2.5 border ${
-                          formFeedback.type === 'success'
+                        className={`p-3.5 rounded-xl text-xs flex items-start gap-2.5 border ${formFeedback.type === 'success'
                             ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
                             : formFeedback.type === 'ineligible'
-                            ? 'bg-amber-50 text-amber-900 border-amber-300'
-                            : formFeedback.type === 'duplicate'
-                            ? 'bg-sky-50 text-sky-900 border-sky-300'
-                            : 'bg-rose-50 text-rose-800 border-rose-200'
-                        }`}
+                              ? 'bg-amber-50 text-amber-900 border-amber-300'
+                              : formFeedback.type === 'duplicate'
+                                ? 'bg-sky-50 text-sky-900 border-sky-300'
+                                : 'bg-rose-50 text-rose-800 border-rose-200'
+                          }`}
                       >
                         {formFeedback.type === 'success' ? (
                           <CheckCircle2 size={16} className="text-emerald-600 shrink-0 mt-0.5" />
                         ) : (
                           <AlertTriangle
                             size={16}
-                            className={`shrink-0 mt-0.5 ${
-                              formFeedback.type === 'ineligible'
+                            className={`shrink-0 mt-0.5 ${formFeedback.type === 'ineligible'
                                 ? 'text-amber-600'
                                 : formFeedback.type === 'duplicate'
-                                ? 'text-sky-600'
-                                : 'text-rose-600'
-                            }`}
+                                  ? 'text-sky-600'
+                                  : 'text-rose-600'
+                              }`}
                           />
                         )}
                         <div className="flex-1 leading-relaxed">
@@ -841,10 +864,10 @@ function ProductDetailsContent({ product, onAddToCart, onToggleWishlist }) {
                             {formFeedback.type === 'success'
                               ? 'Appraisal Recorded'
                               : formFeedback.type === 'ineligible'
-                              ? 'Verified Delivery Required'
-                              : formFeedback.type === 'duplicate'
-                              ? 'Duplicate Appraisal'
-                              : 'Unable to Submit'}
+                                ? 'Verified Delivery Required'
+                                : formFeedback.type === 'duplicate'
+                                  ? 'Duplicate Appraisal'
+                                  : 'Unable to Submit'}
                           </p>
                           <p>{formFeedback.message}</p>
                         </div>
@@ -933,8 +956,8 @@ function ProductDetailsContent({ product, onAddToCart, onToggleWishlist }) {
                         {isSubmittingReview
                           ? 'Publishing Appraisal...'
                           : isEditing
-                          ? 'Save Appraisal Changes'
-                          : 'Publish Verified Appraisal'}
+                            ? 'Save Appraisal Changes'
+                            : 'Publish Verified Appraisal'}
                       </Button>
                       {isEditing && (
                         <Button
@@ -1027,18 +1050,17 @@ function ProductDetailsContent({ product, onAddToCart, onToggleWishlist }) {
 
                     const reviewDate = r.createdAt
                       ? new Date(r.createdAt).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric',
-                        })
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })
                       : 'Recent';
 
                     return (
                       <div
                         key={reviewId}
-                        className={`bg-brand-surface border p-5 sm:p-6 rounded-2xl shadow-xs space-y-3 transition-all ${
-                          isMyOwn ? 'border-brand-accent/50 ring-1 ring-brand-accent/20' : 'border-brand-border/80'
-                        }`}
+                        className={`bg-brand-surface border p-5 sm:p-6 rounded-2xl shadow-xs space-y-3 transition-all ${isMyOwn ? 'border-brand-accent/50 ring-1 ring-brand-accent/20' : 'border-brand-border/80'
+                          }`}
                       >
                         {/* Header: Avatar, Name, Verified Badge, Date */}
                         <div className="flex items-start justify-between gap-3">
@@ -1166,7 +1188,7 @@ export default function ProductDetails({ onAddToCart, onToggleWishlist }) {
   const [fetchedProduct, setFetchedProduct] = useState(null);
 
   useEffect(() => {
-    if (staticProduct || !id) return;
+    if (!id) return;
 
     let active = true;
     productService
@@ -1183,9 +1205,9 @@ export default function ProductDetails({ onAddToCart, onToggleWishlist }) {
     return () => {
       active = false;
     };
-  }, [id, staticProduct]);
+  }, [id]);
 
-  const product = staticProduct || fetchedProduct || products[0];
+  const product = fetchedProduct || staticProduct || products[0];
 
   return (
     <ProductDetailsContent
