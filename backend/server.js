@@ -27,6 +27,27 @@ connectDB();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Ensure DB connection for serverless cold-starts
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    console.error('Database connection error:', err);
+    next();
+  }
+});
+
+// Root Route for backend health and status
+app.get('/', (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'E-Commerce Backend API is live and running smoothly!',
+    healthCheck: '/api/health',
+    endpoints: ['/api/products', '/api/categories', '/api/auth'],
+  });
+});
+
 // Security Headers
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
