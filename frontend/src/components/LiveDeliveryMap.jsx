@@ -299,9 +299,7 @@ export default function LiveDeliveryMap({
   };
 
   // Google Maps navigation direct URL
-  const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${hubCoords.lat},${hubCoords.lng}&destination=${encodeURIComponent(
-    destCoords.address || 'Indore'
-  )}&travelmode=driving`;
+  const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${riderCoords.lat || hubCoords.lat},${riderCoords.lng || hubCoords.lng}&destination=${destCoords.lat},${destCoords.lng}&travelmode=driving`;
 
   return (
     <div

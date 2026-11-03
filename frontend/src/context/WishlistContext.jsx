@@ -1,8 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
+import { useAuth } from './AuthContext';
 
 const WishlistContext = createContext(null);
 
-const STORAGE_KEY = 'premium_store_wishlist';
+const BASE_STORAGE_KEY = 'premium_store_wishlist';
 
 // Helper to normalize product data ensuring required fields exist
 const normalizeProduct = (product) => {
@@ -28,10 +29,14 @@ const normalizeProduct = (product) => {
 };
 
 export function WishlistProvider({ children }) {
+  const { user } = useAuth();
+  const userId = user?.id || user?._id || 'guest';
+  const storageKey = `${BASE_STORAGE_KEY}_${userId}`;
+
   // Initialize wishlist from localStorage
   const [wishlistItems, setWishlistItems] = useState(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
+      const saved = localStorage.getItem(storageKey);
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) {
@@ -44,14 +49,32 @@ export function WishlistProvider({ children }) {
     return [];
   });
 
+  // Switch wishlist when authenticated user changes
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          setWishlistItems(parsed.filter(Boolean));
+          return;
+        }
+      }
+      setWishlistItems([]);
+    } catch (err) {
+      console.error('Failed to reload wishlist for user:', err);
+      setWishlistItems([]);
+    }
+  }, [storageKey]);
+
   // Sync with localStorage whenever wishlistItems change
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(wishlistItems));
+      localStorage.setItem(storageKey, JSON.stringify(wishlistItems));
     } catch (err) {
       console.error('Failed to save wishlist to localStorage:', err);
     }
-  }, [wishlistItems]);
+  }, [wishlistItems, storageKey]);
 
   // Check if a specific product is in wishlist
   const isInWishlist = useCallback(

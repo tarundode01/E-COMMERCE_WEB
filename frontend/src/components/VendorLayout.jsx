@@ -24,11 +24,14 @@ import {
   AlertCircle,
   Navigation,
   Bike,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import Badge from './Badge';
 import Button from './Button';
 import { vendorService, orderService, categoryService, vendorDeliveryService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { formatImageUrl } from '../utils/imageUrl';
 
 /**
@@ -58,6 +61,7 @@ export default function VendorLayout({
   const location = useLocation();
   const navigate = useNavigate();
   const { user, store: authStore, logout } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
   const activeStore = propStore || store || authStore;
 
   useEffect(() => {
@@ -240,7 +244,7 @@ export default function VendorLayout({
       {/* 1. SIDEBAR (100% Fixed on Desktop & Smooth Drawer on Mobile/Tablet) */}
       {/* ========================================================================= */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 h-screen bg-brand-black text-white flex flex-col justify-between transition-transform duration-300 ease-in-out border-r border-white/10 select-none shadow-2xl lg:shadow-none ${
+        className={`fixed inset-y-0 left-0 z-50 w-64 h-[100dvh] bg-brand-black text-white flex flex-col justify-between transition-transform duration-300 ease-in-out border-r border-white/10 select-none shadow-2xl lg:shadow-none ${
           isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
         aria-label="Merchant Navigation Sidebar"
@@ -293,7 +297,7 @@ export default function VendorLayout({
                         ? 'bg-emerald-400'
                         : isRejected
                         ? 'bg-rose-400'
-                        : 'bg-amber-400 animate-pulse'
+                        : 'bg-amber-400'
                     }`}
                   />
                   <span className="text-[10px] text-neutral-300 capitalize font-medium">
@@ -357,23 +361,8 @@ export default function VendorLayout({
           </nav>
         </div>
 
-        {/* Bottom Pinned Section: Public Store Link, Customer Shop & Vendor Profile Details */}
+        {/* Bottom Pinned Section: Customer Shop & Vendor Profile Details */}
         <div className="shrink-0 p-3.5 border-t border-white/10 space-y-2.5 bg-brand-black">
-          {/* Public Storefront Link (if approved) */}
-          {activeStore?.slug && isApproved && (
-            <Link
-              to={`/store/${activeStore.slug}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => setIsMobileSidebarOpen(false)}
-              className="flex items-center justify-center gap-2 w-full py-2 px-3 rounded-lg bg-white/5 hover:bg-white/10 text-xs font-medium text-neutral-300 hover:text-white transition-colors border border-white/10"
-            >
-              <Store size={14} />
-              <span>Public Atelier</span>
-              <ExternalLink size={12} className="opacity-70" />
-            </Link>
-          )}
-
           {/* Back to Client Storefront */}
           <Link
             to="/shop"
@@ -413,9 +402,9 @@ export default function VendorLayout({
       {/* ========================================================================= */}
       {/* 2. MAIN VENDOR CONTENT CONTAINER (Offset by fixed sidebar on desktop) */}
       {/* ========================================================================= */}
-      <div className="lg:pl-64 flex flex-col min-h-screen min-w-0 transition-all duration-300">
+      <div className="lg:pl-64 flex flex-col min-h-screen min-w-0 w-full max-w-full overflow-x-hidden transition-all duration-300">
         {/* Top Navigation & Status Bar - Ultra-Luxurious Merchant Suite Header */}
-        <header className="relative h-18 sm:h-22 bg-gradient-to-r from-white via-brand-surface to-brand-offwhite/80 backdrop-blur-2xl border-b border-brand-border/90 px-3.5 sm:px-6 lg:px-8 flex items-center justify-between sticky top-0 z-30 shadow-[0_4px_30px_-6px_rgba(20,20,25,0.04),0_1px_3px_rgba(0,0,0,0.02)] transition-all">
+        <header className="relative min-h-[4.25rem] sm:h-20 lg:h-22 bg-gradient-to-r from-white via-brand-surface to-brand-offwhite/80 backdrop-blur-2xl border-b border-brand-border/90 px-3 sm:px-6 lg:px-8 flex items-center justify-between sticky top-0 z-30 shadow-[0_4px_30px_-6px_rgba(20,20,25,0.04),0_1px_3px_rgba(0,0,0,0.02)] transition-all py-2 sm:py-0">
           {/* Ambient Golden Radial Light Glow */}
           <div className="absolute left-1/4 top-0 w-96 h-12 bg-brand-accent/5 blur-3xl pointer-events-none rounded-full" />
 
@@ -426,7 +415,7 @@ export default function VendorLayout({
           <div className="absolute inset-x-0 bottom-0 h-[1.5px] bg-gradient-to-r from-transparent via-brand-accent/60 to-transparent pointer-events-none" />
 
           {/* Left: Mobile Sidebar Toggle & Page Title */}
-          <div className="flex items-center gap-3 sm:gap-3.5 min-w-0">
+          <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0">
             {/* Mobile Hamburger Toggle Button */}
             <button
               type="button"
@@ -434,13 +423,13 @@ export default function VendorLayout({
               className="lg:hidden p-2 text-brand-charcoal hover:text-brand-black bg-white/90 hover:bg-brand-cream/80 border border-brand-border/90 hover:border-brand-accent/50 rounded-xl transition-all cursor-pointer shadow-2xs active:scale-95 shrink-0 focus:outline-none"
               aria-label="Toggle mobile menu"
             >
-              <Menu size={20} />
+              <Menu size={19} />
             </button>
 
             <div className="text-left min-w-0">
               {/* Micro Luxury Atelier Breadcrumb */}
               <div className="hidden sm:flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-[#9E8257]">
-                <Sparkles size={11} className="text-brand-accent animate-pulse shrink-0" />
+                <Sparkles size={11} className="text-brand-accent shrink-0" />
                 <span className="truncate max-w-[180px] font-serif font-semibold text-brand-black/85">
                   {activeStore?.name || 'Maison Atelier'}
                 </span>
@@ -449,24 +438,21 @@ export default function VendorLayout({
               </div>
 
               {/* Main Page Title with Live Radar Status Badge */}
-              <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap">
-                <h1 className="font-serif text-base sm:text-xl lg:text-[25px] font-bold text-brand-black tracking-tight truncate leading-tight">
+              <div className="flex items-center gap-1.5 sm:gap-2.5 flex-wrap">
+                <h1 className="font-serif text-sm xs:text-base sm:text-xl lg:text-[23px] font-bold text-brand-black tracking-tight truncate leading-tight">
                   {title}
                 </h1>
 
                 {/* Status Badges */}
                 {isApproved && (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[10px] sm:text-[11px] font-semibold bg-emerald-500/10 text-emerald-900 border border-emerald-500/30 shadow-[0_2px_8px_rgba(16,185,129,0.12)] backdrop-blur-xs shrink-0">
-                    <span className="relative flex h-2 w-2">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                    </span>
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-semibold bg-emerald-500/10 text-emerald-900 border border-emerald-500/30 shadow-2xs backdrop-blur-xs shrink-0">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
                     <span className="hidden xs:inline">Verified & Live</span>
                   </span>
                 )}
                 {isPending && (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[10px] sm:text-[11px] font-semibold bg-amber-500/10 text-amber-900 border border-amber-500/30 shadow-xs backdrop-blur-xs shrink-0">
-                    <Clock size={12} className="text-amber-600 animate-pulse" />
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-semibold bg-amber-500/10 text-amber-900 border border-amber-500/30 shadow-xs backdrop-blur-xs shrink-0">
+                    <Clock size={12} className="text-amber-600" />
                     <span>Pending Approval</span>
                   </span>
                 )}
@@ -490,7 +476,7 @@ export default function VendorLayout({
           {/* Center Enterprise Telemetry Capsule (Large Desktop Screens) */}
           <div className="hidden xl:flex items-center gap-3.5 px-4.5 py-1.5 rounded-full bg-white/95 border border-brand-border/90 shadow-[0_2px_14px_-2px_rgba(197,168,128,0.18)] text-xs backdrop-blur-md hover:border-brand-accent/50 transition-all">
             <div className="flex items-center gap-1.5 text-emerald-800 font-semibold text-[11px] tracking-wide">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
               <span>BOUTIQUE ONLINE</span>
             </div>
             <span className="w-px h-3.5 bg-brand-border" />
@@ -511,7 +497,7 @@ export default function VendorLayout({
                   to="/vendor/orders"
                   className="flex items-center gap-1 text-[10.5px] px-2 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-900 font-bold hover:bg-amber-500/25 transition-colors"
                 >
-                  <Clock size={11} className="text-amber-700 animate-pulse" />
+                  <Clock size={11} className="text-amber-700" />
                   <span>{counts.pendingOrders} to pack</span>
                 </Link>
               </>
@@ -519,40 +505,36 @@ export default function VendorLayout({
           </div>
 
           {/* Right Action Bar */}
-          <div className="flex items-center gap-2.5 sm:gap-3.5 shrink-0">
-            {/* Quick Boutique Public Link */}
-            <a
-              href={activeStore?.slug && isApproved ? `/store/${activeStore.slug}` : '/shop'}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <button
-                type="button"
-                className="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-b from-[#1C1C1F] to-[#111113] hover:from-[#26262B] hover:to-[#17171A] text-white text-xs font-semibold shadow-[0_2px_10px_rgba(0,0,0,0.1)] hover:shadow-[0_4px_20px_-3px_rgba(197,168,128,0.35)] transition-all duration-300 border border-neutral-700/80 hover:border-brand-accent/80 group cursor-pointer active:scale-95"
-                title={activeStore?.slug && isApproved ? "Open your live public boutique" : "Visit customer shopfront"}
-              >
-                <Store size={14} className="text-brand-accent group-hover:scale-110 group-hover:rotate-6 transition-all duration-300" />
-                <span className="tracking-wide text-neutral-100 group-hover:text-white font-medium">
-                  {activeStore?.slug && isApproved ? 'Public Atelier' : 'Shopfront'}
-                </span>
-                <ArrowUpRight size={13} className="text-brand-accent group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-200" />
-              </button>
-            </a>
-
+          <div className="flex items-center gap-1.5 xs:gap-2.5 sm:gap-3.5 shrink-0">
             {actions}
+
+            {/* Dark Mode Toggle */}
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="p-2 sm:p-2.5 text-brand-charcoal hover:text-brand-black bg-white hover:bg-brand-cream/70 border border-brand-border/90 hover:border-brand-accent/60 rounded-xl transition-all cursor-pointer shadow-2xs hover:shadow-xs focus:outline-none group active:scale-95"
+              aria-label={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            >
+              {isDark ? (
+                <Sun size={17} className="text-amber-400 group-hover:rotate-45 transition-transform duration-300 drop-shadow-[0_0_8px_rgba(251,191,36,0.6)]" />
+              ) : (
+                <Moon size={17} className="text-brand-charcoal group-hover:-rotate-12 transition-transform duration-300" />
+              )}
+            </button>
 
             {/* Notification Bell Dropdown */}
             <div className="relative">
               <button
                 type="button"
                 onClick={() => setIsNotificationsOpen((prev) => !prev)}
-                className="relative p-2.5 text-brand-charcoal hover:text-brand-black bg-white hover:bg-brand-cream/70 border border-brand-border/90 hover:border-brand-accent/60 rounded-xl transition-all cursor-pointer shadow-2xs hover:shadow-xs focus:outline-none group active:scale-95"
+                className="relative p-2 sm:p-2.5 text-brand-charcoal hover:text-brand-black bg-white hover:bg-brand-cream/70 border border-brand-border/90 hover:border-brand-accent/60 rounded-xl transition-all cursor-pointer shadow-2xs hover:shadow-xs focus:outline-none group active:scale-95"
                 title="Live Telemetry & Notifications"
                 aria-label="Live Telemetry & Notifications"
               >
-                <Bell size={18} className="transition-transform group-hover:rotate-12 duration-200" />
+                <Bell size={17} className="transition-transform group-hover:rotate-12 duration-200" />
                 {counts.pendingOrders > 0 ? (
-                  <span className="absolute -top-1 -right-1 min-w-[19px] h-[19px] px-1 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 text-white text-[9.5px] font-black flex items-center justify-center ring-2 ring-white animate-pulse shadow-[0_2px_8px_rgba(245,158,11,0.5)]">
+                  <span className="absolute -top-1 -right-1 min-w-[19px] h-[19px] px-1 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 text-white text-[9.5px] font-black flex items-center justify-center ring-2 ring-white shadow-[0_2px_8px_rgba(245,158,11,0.5)]">
                     {counts.pendingOrders}
                   </span>
                 ) : (
@@ -566,10 +548,10 @@ export default function VendorLayout({
                     className="fixed inset-0 z-40"
                     onClick={() => setIsNotificationsOpen(false)}
                   />
-                  <div className="absolute right-0 mt-3 w-[calc(100vw-2rem)] sm:w-92 max-w-sm bg-white/95 backdrop-blur-2xl border border-brand-border rounded-2xl shadow-[0_25px_70px_-15px_rgba(17,17,17,0.18)] z-50 p-4 text-left divide-y divide-brand-border/60 animate-in fade-in slide-in-from-top-2 duration-150">
+                  <div className="fixed inset-x-3 sm:inset-x-auto sm:right-0 sm:absolute top-16 sm:top-auto sm:mt-3 w-auto sm:w-92 max-w-sm bg-white/95 backdrop-blur-2xl border border-brand-border rounded-2xl shadow-[0_25px_70px_-15px_rgba(17,17,17,0.18)] z-50 p-4 text-left divide-y divide-brand-border/60 animate-in fade-in slide-in-from-top-2 duration-150">
                     <div className="flex items-center justify-between pb-3">
                       <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                        <div className="w-2 h-2 rounded-full bg-emerald-500" />
                         <h4 className="text-xs font-bold text-brand-black uppercase tracking-wider flex items-center gap-1.5">
                           <Sparkles size={12} className="text-brand-accent" />
                           Atelier Telemetry
@@ -645,23 +627,23 @@ export default function VendorLayout({
             </div>
 
             {/* Merchant Executive Profile Chip */}
-            <div className="flex items-center gap-2.5 pl-1.5 sm:pl-3 sm:border-l sm:border-brand-border/80">
+            <div className="flex items-center gap-2 pl-1 sm:pl-3 sm:border-l sm:border-brand-border/80">
               <div className="relative">
-                <div className="w-9.5 h-9.5 sm:w-10.5 sm:h-10.5 rounded-2xl bg-gradient-to-tr from-[#E8DAC2] via-[#C5A880] to-[#8C7148] p-[1.5px] shadow-sm shrink-0 overflow-hidden group hover:shadow-[0_2px_12px_rgba(197,168,128,0.35)] transition-all">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-gradient-to-tr from-[#E8DAC2] via-[#C5A880] to-[#8C7148] p-[1.5px] shadow-sm shrink-0 overflow-hidden group hover:shadow-[0_2px_12px_rgba(197,168,128,0.35)] transition-all">
                   {activeStore?.logoUrl ? (
                     <img
                       src={formatImageUrl(activeStore.logoUrl)}
                       alt={activeStore.name}
-                      className="w-full h-full object-cover rounded-[13px]"
+                      className="w-full h-full object-cover rounded-[10px] sm:rounded-[13px]"
                     />
                   ) : (
-                    <div className="w-full h-full rounded-[13px] bg-brand-black flex items-center justify-center text-brand-accent font-serif font-bold text-xs sm:text-sm tracking-wider">
+                    <div className="w-full h-full rounded-[10px] sm:rounded-[13px] bg-brand-black flex items-center justify-center text-brand-accent font-serif font-bold text-xs sm:text-sm tracking-wider">
                       {vendorInitials}
                     </div>
                   )}
                 </div>
                 {isApproved && (
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 absolute -bottom-0.5 -right-0.5 ring-2 ring-white shadow-2xs" />
+                  <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-emerald-500 absolute -bottom-0.5 -right-0.5 ring-2 ring-white shadow-2xs" />
                 )}
               </div>
               <div className="hidden lg:block text-left leading-tight">
@@ -681,7 +663,7 @@ export default function VendorLayout({
         </header>
 
         {/* Page Children Content Area */}
-        <main className="p-3.5 sm:p-6 lg:p-8 space-y-5 sm:space-y-8 flex-1">
+        <main className="p-3.5 sm:p-6 lg:p-8 space-y-5 sm:space-y-8 flex-1 max-w-[1700px] w-full mx-auto min-w-0 overflow-x-hidden">
           {children}
         </main>
       </div>

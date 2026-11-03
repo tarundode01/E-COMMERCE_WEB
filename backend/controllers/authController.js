@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import Store from '../models/Store.js';
@@ -39,8 +40,12 @@ export const registerUser = async (req, res) => {
     const missingFields = [];
     if (!name || !name.trim()) missingFields.push('name');
     if (!email || !email.trim()) missingFields.push('email');
-    if (!mobile || !String(mobile).trim()) missingFields.push('mobile');
     if (!password) missingFields.push('password');
+
+    // Mobile is only mandatory for vendor store onboarding
+    if (requestedRole === 'vendor' && (!mobile || !String(mobile).trim())) {
+      missingFields.push('mobile');
+    }
 
     if (missingFields.length > 0) {
       return res.status(400).json({
@@ -63,14 +68,17 @@ export const registerUser = async (req, res) => {
       });
     }
 
-    // Validate mobile number format (minimum 10 digits)
-    const cleanMobile = String(mobile).replace(/\D/g, '');
-    if (cleanMobile.length < 10) {
-      return res.status(400).json({
-        success: false,
-        message: 'Please provide a valid mobile number (at least 10 digits)',
-        errors: { mobile: 'Mobile number must have at least 10 digits' },
-      });
+    // Validate mobile number format if provided
+    let cleanMobile = '';
+    if (mobile && String(mobile).trim()) {
+      cleanMobile = String(mobile).replace(/\D/g, '');
+      if (cleanMobile.length < 10) {
+        return res.status(400).json({
+          success: false,
+          message: 'Please provide a valid mobile number (at least 10 digits)',
+          errors: { mobile: 'Mobile number must have at least 10 digits' },
+        });
+      }
     }
 
     // Validate password length
@@ -488,3 +496,194 @@ export const updateUserProfile = async (req, res) => {
     });
   }
 };
+
+/**
+ * @desc    Authenticate or register user via Social OAuth (Google or Apple)
+ * @route   POST /api/auth/social-login
+ * @access  Public
+ */
+export const socialLogin = async (req, res) => {
+  try {
+    const { provider, email, name, avatar, providerId, role = 'user' } = req.body;
+
+    if (!provider || !['google', 'apple'].includes(provider.toLowerCase())) {
+      return res.status(400).json({
+        success: false,
+        message: 'Valid social provider (google or apple) is required.',
+      });
+    }
+
+    if (!email || !email.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Verified email address is required for social authentication.',
+      });
+    }
+
+    const cleanProvider = provider.toLowerCase();
+    const normalizedEmail = email.trim().toLowerCase();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(normalizedEmail)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide a valid email address.',
+      });
+    }
+
+    let user = await User.findOne({ email: normalizedEmail });
+    let isNewUser = false;
+
+    if (user) {
+      // If user exists, link social credentials if not already linked
+      let updated = false;
+      if (cleanProvider === 'google' && !user.googleId) {
+        user.googleId = providerId || `goog_${Date.now()}`;
+        updated = true;
+      } else if (cleanProvider === 'apple' && !user.appleId) {
+        user.appleId = providerId || `appl_${Date.now()}`;
+        updated = true;
+      }
+      if (avatar && !user.avatar) {
+        user.avatar = avatar;
+        updated = true;
+      }
+      if (!user.isEmailVerified) {
+        user.isEmailVerified = true;
+        updated = true;
+      }
+      if (!user.authProvider || user.authProvider === 'local') {
+        user.authProvider = cleanProvider;
+        updated = true;
+      }
+      if (updated) {
+        await user.save();
+      }
+    } else {
+      // Create new account seamlessly
+      isNewUser = true;
+      const cleanName =
+        (name && name.trim()) ||
+        normalizedEmail.split('@')[0] ||
+        (cleanProvider === 'google' ? 'Google Client' : 'Apple Client');
+      const randomPassword = 'OAuth_' + crypto.randomBytes(16).toString('hex') + '!';
+
+      user = await User.create({
+        name: cleanName,
+        email: normalizedEmail,
+        mobile: '',
+        password: randomPassword,
+        role: ['user', 'vendor'].includes(role) ? role : 'user',
+        authProvider: cleanProvider,
+        googleId: cleanProvider === 'google' ? (providerId || `goog_${Date.now()}`) : undefined,
+        appleId: cleanProvider === 'apple' ? (providerId || `appl_${Date.now()}`) : undefined,
+        avatar: avatar || '',
+        isEmailVerified: true,
+      });
+
+      // If user chose vendor role, create initial pending store
+      if (role === 'vendor') {
+        const storeName = `${cleanName}'s Atelier`;
+        const slug = await Store.generateUniqueSlug(storeName);
+        await Store.create({
+          vendor: user._id,
+          name: storeName,
+          slug,
+          description: 'Artisanal haute luxury boutique and bespoke timepiece atelier.',
+          businessAddress: 'Main Luxury Commercial Boulevard',
+          status: 'pending',
+          supportEmail: normalizedEmail,
+        });
+      }
+    }
+
+    // Check account status
+    if (user.status === 'suspended' || user.status === 'inactive' || user.isActive === false) {
+      return res.status(403).json({
+        success: false,
+        message: 'Your account has been deactivated or suspended. Please contact concierge support.',
+      });
+    }
+
+    const token = generateToken(user._id, user.email, user.role);
+
+    // Retrieve vendor store if applicable
+    let store = null;
+    if (user.role === 'vendor') {
+      store = await Store.findOne({ vendor: user._id });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: isNewUser
+        ? `Account successfully created with ${cleanProvider === 'google' ? 'Google' : 'Apple'}. Welcome!`
+        : `Signed in successfully with ${cleanProvider === 'google' ? 'Google' : 'Apple'}.`,
+      token,
+      isNewUser,
+      user: {
+        id: user._id,
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        mobile: user.mobile,
+        role: user.role,
+        avatar: user.avatar,
+        authProvider: user.authProvider,
+        createdAt: user.createdAt,
+      },
+      store: store
+        ? {
+            id: store._id,
+            name: store.name,
+            slug: store.slug,
+            status: store.status,
+          }
+        : null,
+    });
+  } catch (error) {
+    console.error('Social Login Error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to process social authentication. Please try again.',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
+    });
+  }
+};
+
+/**
+ * @desc    Get dynamic list of accounts for user account chooser
+ * @route   GET /api/auth/discovered-accounts
+ * @access  Public
+ */
+export const getDiscoveredAccounts = async (req, res) => {
+  try {
+    const { provider } = req.query;
+    const filter = {};
+    if (provider && ['google', 'apple'].includes(provider.toLowerCase())) {
+      filter.authProvider = provider.toLowerCase();
+    }
+
+    const users = await User.find(filter)
+      .select('name email avatar authProvider role createdAt')
+      .sort({ updatedAt: -1, createdAt: -1 })
+      .limit(6)
+      .lean();
+
+    const accounts = users.map((u) => ({
+      name: u.name || u.email.split('@')[0],
+      email: u.email,
+      avatar: u.avatar || '',
+      initials: (u.name || u.email).charAt(0).toUpperCase(),
+      provider: u.authProvider || 'google',
+      role: u.role || 'user',
+    }));
+
+    return res.status(200).json({
+      success: true,
+      accounts,
+    });
+  } catch (error) {
+    console.error('Error fetching discovered accounts:', error);
+    return res.status(200).json({ success: true, accounts: [] });
+  }
+};
+

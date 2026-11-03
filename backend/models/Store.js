@@ -150,6 +150,9 @@ const storeSchema = new mongoose.Schema(
   }
 );
 
+// Compound index for public store discovery and SaaS multi-vendor tenant queries
+storeSchema.index({ status: 1, isPubliclyVisible: 1, isOpen: 1 });
+
 /**
  * Generate a URL-friendly unique slug from store name
  * Handles duplicates safely by appending numeric suffix

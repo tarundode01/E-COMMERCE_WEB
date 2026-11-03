@@ -1,5 +1,5 @@
 import React from 'react';
-import { Routes, Route, useLocation } from 'react-router-dom';
+import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import HeroSection from './components/HeroSection';
 import ProductSection from './components/ProductSection';
@@ -37,7 +37,8 @@ import Footer from './components/Footer';
 import ProtectedRoute from './components/ProtectedRoute';
 import { CartProvider, useCart } from './context/CartContext';
 import { WishlistProvider } from './context/WishlistContext';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -80,8 +81,15 @@ class ErrorBoundary extends React.Component {
 }
 
 function AppContent() {
+  const { user, isAuthenticated, isLoading } = useAuth();
   const { addToCart } = useCart();
   const location = useLocation();
+
+  const isAuthRoute =
+    location.pathname === '/login' ||
+    location.pathname === '/register' ||
+    location.pathname === '/vendor/register';
+
   const isAdminRoute = location.pathname.startsWith('/admin');
   const isVendorDashboardRoute =
     location.pathname.startsWith('/vendor') &&
@@ -89,11 +97,35 @@ function AppContent() {
     location.pathname !== '/vendor/approval-status';
   const isDeliveryRoute = location.pathname.startsWith('/delivery');
   const isTrackingRoute = location.pathname.includes('/track');
-  const isDedicatedSaaSRoute = isAdminRoute || isVendorDashboardRoute || isDeliveryRoute || isTrackingRoute;
+  const isDedicatedSaaSRoute =
+    isAdminRoute || isVendorDashboardRoute || isDeliveryRoute || isTrackingRoute || isAuthRoute;
+
+  // 1. Session verification loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-brand-offwhite flex items-center justify-center p-6">
+        <div className="text-center space-y-3">
+          <div className="w-9 h-9 border-2 border-brand-accent border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-xs font-semibold tracking-wider uppercase text-brand-charcoal">
+            Verifying Member Security...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // 2. Strict Authentication Guard:
+  // Only authenticated users can enter the application.
+  // Unauthenticated visitors are automatically redirected to /login.
+  if (!isAuthenticated || !user) {
+    if (!isAuthRoute) {
+      return <Navigate to="/login" state={{ from: location }} replace />;
+    }
+  }
 
   return (
     <div className="min-h-screen bg-brand-offwhite flex flex-col">
-      {/* Premium Consumer Navbar (hidden on dedicated admin & vendor dashboard SaaS suites) */}
+      {/* Premium Consumer Navbar (hidden on dedicated admin & vendor dashboard SaaS suites, and auth screens) */}
       {!isDedicatedSaaSRoute && <Navbar />}
 
       {/* Page Routing */}
@@ -390,13 +422,15 @@ function AppContent() {
 export default function App() {
   return (
     <ErrorBoundary>
-      <AuthProvider>
-        <CartProvider>
-          <WishlistProvider>
-            <AppContent />
-          </WishlistProvider>
-        </CartProvider>
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <CartProvider>
+            <WishlistProvider>
+              <AppContent />
+            </WishlistProvider>
+          </CartProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </ErrorBoundary>
   );
 }

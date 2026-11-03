@@ -2,6 +2,8 @@ import express from 'express';
 import {
   registerUser,
   loginUser,
+  socialLogin,
+  getDiscoveredAccounts,
   getUserProfile,
   updateUserProfile,
 } from '../controllers/authController.js';
@@ -18,6 +20,16 @@ router.post('/register', registerUser);
 // @desc    Authenticate user and get JWT token
 // @access  Public
 router.post('/login', loginUser);
+
+// @route   POST /api/auth/social-login
+// @desc    Authenticate or register user via Google or Apple OAuth
+// @access  Public
+router.post('/social-login', socialLogin);
+
+// @route   GET /api/auth/discovered-accounts
+// @desc    Get dynamic accounts list for OAuth account chooser
+// @access  Public
+router.get('/discovered-accounts', getDiscoveredAccounts);
 
 // @route   GET /api/auth/profile
 // @desc    Get current user profile

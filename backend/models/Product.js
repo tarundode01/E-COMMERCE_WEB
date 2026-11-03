@@ -112,7 +112,9 @@ const productSchema = new mongoose.Schema(
 
 // Database indexes for fast querying, filtering, and sorting
 productSchema.index({ category: 1, price: 1, rating: -1, createdAt: -1 });
-productSchema.index({ store: 1, status: 1 });
+productSchema.index({ store: 1, status: 1, createdAt: -1 });
+productSchema.index({ vendor: 1, status: 1, createdAt: -1 });
+productSchema.index({ status: 1, createdAt: -1 });
 productSchema.index({ sku: 1 }, { unique: true, sparse: true });
 productSchema.index({ name: 'text', description: 'text' });
 

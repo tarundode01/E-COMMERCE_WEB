@@ -27,6 +27,72 @@ connectDB();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Security Headers
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  next();
+});
+
+// Lightweight in-memory rate limiter for sensitive endpoints
+const createRateLimiter = ({ windowMs = 15 * 60 * 1000, max = 100, message = 'Too many requests, please try again later.' }) => {
+  const requests = new Map();
+  // Periodic cleanup of stale tracking records
+  setInterval(() => {
+    const now = Date.now();
+    for (const [key, record] of requests.entries()) {
+      if (now - record.startTime > windowMs) {
+        requests.delete(key);
+      }
+    }
+  }, 5 * 60 * 1000).unref();
+
+  return (req, res, next) => {
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+    // Bypass or grant high allowance for localhost in development
+    const isLocalhost =
+      ip === '127.0.0.1' ||
+      ip === '::1' ||
+      ip === '::ffff:127.0.0.1' ||
+      ip.includes('127.0.0.1') ||
+      ip === 'localhost';
+
+    if (process.env.NODE_ENV !== 'production' && isLocalhost) {
+      return next();
+    }
+
+    const now = Date.now();
+    let record = requests.get(ip);
+    if (!record || now - record.startTime > windowMs) {
+      record = { count: 1, startTime: now };
+      requests.set(ip, record);
+      return next();
+    }
+    record.count++;
+    if (record.count > max) {
+      return res.status(429).json({
+        success: false,
+        message,
+        retryAfterSeconds: Math.ceil((windowMs - (now - record.startTime)) / 1000),
+      });
+    }
+    next();
+  };
+};
+
+const authRateLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: 'Too many authentication attempts from this IP. Please try again after 15 minutes.',
+});
+
+const checkoutRateLimiter = createRateLimiter({
+  windowMs: 60 * 1000,
+  max: 60,
+  message: 'Order creation rate limit reached. Please wait a moment before trying again.',
+});
+
 // Middlewares
 app.use(cors());
 app.use(express.json());
@@ -44,8 +110,8 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Authentication Routes
-app.use('/api/auth', authRoutes);
+// Authentication Routes (with rate limiting protection)
+app.use('/api/auth', authRateLimiter, authRoutes);
 
 // Product CRUD Routes
 app.use('/api/products', productRoutes);
@@ -59,8 +125,8 @@ app.use('/api/reviews', reviewRoutes);
 // Category CRUD Routes
 app.use('/api/categories', categoryRoutes);
 
-// Order Customer & Shared Routes
-app.use('/api/orders', orderRoutes);
+// Order Customer & Shared Routes (with rate limiting protection)
+app.use('/api/orders', checkoutRateLimiter, orderRoutes);
 
 // Admin Dedicated Order Management Routes
 app.use('/api/admin/orders', adminOrderRoutes);

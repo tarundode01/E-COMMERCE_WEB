@@ -228,13 +228,13 @@ export default function ProductCard({
           )}
 
           {/* Rating Stars & Reviews */}
-          {rating && (
+          {Boolean(rating && Number(rating) > 0) && (
             <div className="flex items-center gap-1.5 mt-2">
               <div className="flex items-center text-amber-500">
                 <Star size={13} className="fill-amber-500" />
               </div>
               <span className="text-xs font-semibold text-brand-black">{rating}</span>
-              {reviewsCount && (
+              {Boolean(reviewsCount && Number(reviewsCount) > 0) && (
                 <span className="text-xs text-brand-muted">
                   ({reviewsCount})
                 </span>

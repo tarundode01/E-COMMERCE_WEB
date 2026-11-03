@@ -1,9 +1,10 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { orderService } from '../services/api';
+import { useAuth } from './AuthContext';
 
 const CartContext = createContext();
 
-const STORAGE_KEY = 'premium_store_cart';
+const BASE_STORAGE_KEY = 'premium_store_cart';
 
 // Helper to reliably parse price numbers
 const parsePrice = (price) => {
@@ -14,10 +15,14 @@ const parsePrice = (price) => {
 };
 
 export function CartProvider({ children }) {
+  const { user } = useAuth();
+  const userId = user?.id || user?._id || 'guest';
+  const storageKey = `${BASE_STORAGE_KEY}_${userId}`;
+
   // Initialize from localStorage (persisted between page refreshes)
   const [cartItems, setCartItems] = useState(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
+      const saved = localStorage.getItem(storageKey);
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) {
@@ -41,14 +46,32 @@ export function CartProvider({ children }) {
     error: null,
   });
 
+  // Switch cart when authenticated user changes (prevents User 1 seeing User 2 cart)
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          setCartItems(parsed);
+          return;
+        }
+      }
+      setCartItems([]);
+    } catch (err) {
+      console.error('Failed to reload cart for user:', err);
+      setCartItems([]);
+    }
+  }, [storageKey]);
+
   // Sync to localStorage on every change
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(cartItems));
+      localStorage.setItem(storageKey, JSON.stringify(cartItems));
     } catch (err) {
       console.error('Failed to save cart to localStorage:', err);
     }
-  }, [cartItems]);
+  }, [cartItems, storageKey]);
 
   // Revalidate cart items with real MongoDB product data from backend
   const validateCartWithBackend = useCallback(async () => {

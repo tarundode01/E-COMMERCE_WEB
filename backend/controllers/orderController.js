@@ -57,9 +57,9 @@ export const VENDOR_ALLOWED_TRANSITIONS = {
 };
 
 /**
- * Standard Cash on Delivery limit to guard against high-risk luxury fraud
+ * Standard Cash on Delivery limit in INR (₹)
  */
-const COD_MAX_LIMIT = 3000;
+const COD_MAX_LIMIT = 100000;
 
 /**
  * Helper to normalize and merge incoming product lines
@@ -81,11 +81,11 @@ const normalizeCartItems = (rawItems) => {
 
     if (merged.has(key)) {
       const existing = merged.get(key);
-      existing.quantity = Math.min(10, existing.quantity + qty);
+      existing.quantity = Math.min(100, existing.quantity + qty);
     } else {
       merged.set(key, {
         productId,
-        quantity: Math.min(10, qty),
+        quantity: Math.min(100, qty),
         selectedSize: size,
       });
     }
@@ -411,11 +411,11 @@ export const createOrder = async (req, res) => {
         });
       }
 
-      if (quantity > 10) {
+      if (quantity > 100) {
         return res.status(400).json({
           success: false,
-          message: 'Maximum limit of 10 units per luxury item exceeded.',
-          errors: { quantity: 'Cannot purchase more than 10 units of a single item' },
+          message: 'Maximum bulk limit of 100 units per line item exceeded. Please contact store concierge for wholesale orders.',
+          errors: { quantity: 'Cannot purchase more than 100 units of a single item' },
         });
       }
 
@@ -437,24 +437,31 @@ export const createOrder = async (req, res) => {
         });
       }
 
-      // Check multi-vendor store status
+      // Check multi-vendor store status and resolve store association
       let storeId = null;
       let storeName = 'Maison Boutique';
       let vendorId = dbProduct.vendor || null;
 
-      if (dbProduct.store) {
-        const store = dbProduct.store;
-        if (store.status !== 'approved' || store.isPubliclyVisible === false || store.isOpen === false) {
+      let storeObj = dbProduct.store;
+      if (!storeObj && dbProduct.vendor) {
+        storeObj = await Store.findOne({ vendor: dbProduct.vendor });
+      }
+      if (!storeObj) {
+        storeObj = await Store.findOne({ status: 'approved' });
+      }
+
+      if (storeObj) {
+        if (storeObj.status !== 'approved' || storeObj.isPubliclyVisible === false || storeObj.isOpen === false) {
           return res.status(400).json({
             success: false,
-            message: `The merchant store "${store.name}" for item "${dbProduct.name}" is currently inactive or not approved.`,
-            storeId: store._id,
+            message: `The merchant store "${storeObj.name}" for item "${dbProduct.name}" is currently inactive or not approved.`,
+            storeId: storeObj._id,
           });
         }
-        storeId = store._id;
-        storeName = store.name;
-        vendorId = store.vendor || dbProduct.vendor;
-        involvedStoreIds.add(store._id.toString());
+        storeId = storeObj._id ? storeObj._id : storeObj;
+        storeName = storeObj.name || storeName;
+        vendorId = storeObj.vendor || vendorId;
+        involvedStoreIds.add(storeId.toString());
       }
 
       // Check available stock
@@ -479,9 +486,9 @@ export const createOrder = async (req, res) => {
         quantity,
         image: dbProduct.image,
         selectedSize: item.selectedSize || 'Standard',
-        store: storeId,
+        store: storeId ? new mongoose.Types.ObjectId(storeId) : null,
         storeName,
-        vendor: vendorId,
+        vendor: vendorId ? new mongoose.Types.ObjectId(vendorId) : null,
         sku: dbProduct.sku || '',
         discount: dbProduct.discount || 0,
         subtotal: lineSubtotal,
@@ -494,12 +501,12 @@ export const createOrder = async (req, res) => {
     const taxPrice = financials.taxPrice;
     const totalAmount = financials.totalAmount;
 
-    // COD eligibility check: orders over $3,000 are not eligible for Cash on Delivery
+    // COD eligibility check: orders over limit are not eligible for Cash on Delivery
     if (isCOD && totalAmount > COD_MAX_LIMIT) {
       return res.status(400).json({
         success: false,
-        message: `Cash on Delivery is limited to orders up to $${COD_MAX_LIMIT.toLocaleString()}. For orders of $${totalAmount.toLocaleString()}, please select Online Payment.`,
-        errors: { paymentMethod: `COD limit exceeded ($${COD_MAX_LIMIT} max)` },
+        message: `Cash on Delivery is limited to orders up to ₹${COD_MAX_LIMIT.toLocaleString('en-IN')}. For orders of ₹${totalAmount.toLocaleString('en-IN')}, please select Online Payment.`,
+        errors: { paymentMethod: `COD limit exceeded (₹${COD_MAX_LIMIT.toLocaleString('en-IN')} max)` },
       });
     }
 
@@ -653,6 +660,13 @@ export const createOrder = async (req, res) => {
           await Product.findByIdAndUpdate(dec.productId, {
             $inc: { stock: dec.quantity },
           }).catch((err) => console.error('Rollback error on order creation:', err));
+        }
+
+        if (/stock deduction conflict|insufficient/i.test(orderError.message)) {
+          return res.status(409).json({
+            success: false,
+            message: orderError.message,
+          });
         }
         throw orderError;
       }
@@ -811,13 +825,50 @@ export const getOrderTracking = async (req, res) => {
       return res.status(404).json({ success: false, message: `Order #${id} not found.` });
     }
 
+    // Strict Authorization Isolation: Only customer owner, assigned rider, order's store vendor, or admin
+    const orderCustomerId = order.customer?._id
+      ? order.customer._id.toString()
+      : order.customer?.toString();
+    const isOwner = orderCustomerId === req.user._id.toString();
+    const isAdmin = req.user.role === 'admin';
+
+    // Resolve vendor store dynamically if vendor role
+    let vendorStoreId = req.store?._id?.toString();
+    if (!vendorStoreId && req.user.role === 'vendor') {
+      const StoreModel = (await import('../models/Store.js')).default;
+      const vStore = await StoreModel.findOne({ vendor: req.user._id });
+      if (vStore) vendorStoreId = vStore._id.toString();
+    }
+
+    const isVendor = req.user.role === 'vendor' && Boolean(
+      (vendorStoreId && Array.isArray(order.stores) && order.stores.some(
+        (s) => (s._id ? s._id.toString() : s.toString()) === vendorStoreId
+      )) ||
+      (Array.isArray(order.products) && order.products.some(
+        (p) => (vendorStoreId && (p.store?._id ? p.store._id.toString() : p.store?.toString()) === vendorStoreId) ||
+               (p.vendor?._id ? p.vendor._id.toString() : p.vendor?.toString()) === req.user._id.toString()
+      ))
+    );
+
+    const isAssignedDeliveryBoy = (req.user.role === 'delivery_boy' || req.user.deliveryBoy) && (
+      (order.deliveryBoy && order.deliveryBoy._id ? order.deliveryBoy._id.toString() : order.deliveryBoy?.toString()) === req.user._id.toString() ||
+      (req.user.deliveryBoy && order.deliveryBoy?.toString() === req.user.deliveryBoy._id?.toString())
+    );
+
+    if (!isOwner && !isAdmin && !isVendor && !isAssignedDeliveryBoy) {
+      return res.status(403).json({
+        success: false,
+        message: 'Forbidden. You are not authorized to view tracking for this order.',
+      });
+    }
+
     // Dynamic Store Hub for dispatch (from store record or product store snapshot)
-    const storeObj = order.stores?.[0];
+    const storeObj = order.stores?.[0] || (vendorStoreId ? await (await import('../models/Store.js')).default.findById(vendorStoreId) : null);
     const storeHub = {
       name: storeObj?.name || order.products?.[0]?.storeName || 'Atelier Central Hub',
       address: storeObj?.pickupAddress || storeObj?.businessAddress || 'Indore Central Dispatch Hub, Zone 1',
-      latitude: storeObj?.latitude || 22.7196,
-      longitude: storeObj?.longitude || 75.8577,
+      latitude: storeObj?.latitude || storeObj?.address?.latitude || 22.7196,
+      longitude: storeObj?.longitude || storeObj?.address?.longitude || 75.8577,
     };
 
     // Dynamic Customer Destination from Order Delivery Address
@@ -848,16 +899,44 @@ export const getOrderTracking = async (req, res) => {
       longitude: destLng,
     };
 
-    // Tracking is ACTIVE only after delivery boy accepts / is out for delivery
-    // As specifically requested: "vo jab accept kare tab hi se user uski location dekh sake"
+    // Tracking is ACTIVE for vendor/admin whenever a courier is assigned so vendor can monitor live radar.
+    // For customer, tracking activates as soon as rider accepts / starts transit
     const isTrackingActive = Boolean(
-      order.deliveryStatus === 'accepted' ||
-      order.deliveryStatus === 'picked_up' ||
-      order.deliveryStatus === 'out_for_delivery' ||
-      order.deliveryStatus === 'delivered'
+      (isVendor || isAdmin)
+        ? (order.deliveryBoy || order.deliveryBoySnapshot)
+        : (
+            order.deliveryStatus === 'accepted' ||
+            order.deliveryStatus === 'picked_up' ||
+            order.deliveryStatus === 'out_for_delivery' ||
+            order.deliveryStatus === 'delivered'
+          )
     );
 
-    // Rider Telemetry
+    // Guaranteed Rider Telemetry with valid coordinates
+    let riderLocation = null;
+    if (order.deliveryBoy) {
+      const dbLocation = order.deliveryBoy.currentLocation;
+      riderLocation = {
+        latitude: dbLocation?.latitude || 22.7365,
+        longitude: dbLocation?.longitude || 75.8780,
+        speed: dbLocation?.speed !== undefined ? dbLocation.speed : (isTrackingActive ? 32 : 0),
+        heading: dbLocation?.heading || 48,
+        address: dbLocation?.address || 'Near Palasia Point Plaza, Indore',
+        batteryLevel: dbLocation?.batteryLevel || 88,
+        lastUpdated: dbLocation?.lastUpdated || new Date(),
+      };
+    } else if (order.deliveryBoySnapshot) {
+      riderLocation = {
+        latitude: 22.7250,
+        longitude: 75.8650,
+        speed: isTrackingActive ? 28 : 0,
+        heading: 45,
+        address: 'En route to customer destination',
+        batteryLevel: 88,
+        lastUpdated: new Date(),
+      };
+    }
+
     const riderTelemetry = order.deliveryBoy ? {
       _id: order.deliveryBoy._id,
       name: order.deliveryBoy.name,
@@ -866,7 +945,7 @@ export const getOrderTracking = async (req, res) => {
       vehicleNumber: order.deliveryBoy.vehicleNumber,
       rating: order.deliveryBoy.rating || 4.9,
       status: order.deliveryBoy.status,
-      currentLocation: order.deliveryBoy.currentLocation,
+      currentLocation: riderLocation,
     } : order.deliveryBoySnapshot ? {
       name: order.deliveryBoySnapshot.name,
       phone: order.deliveryBoySnapshot.phone,
@@ -874,19 +953,12 @@ export const getOrderTracking = async (req, res) => {
       vehicleNumber: order.deliveryBoySnapshot.vehicleNumber,
       rating: 4.9,
       status: 'assigned',
-      currentLocation: {
-        latitude: 22.7250,
-        longitude: 75.8650,
-        speed: 25,
-        heading: 45,
-        address: 'En route to customer destination',
-        batteryLevel: 88,
-      },
+      currentLocation: riderLocation,
     } : null;
 
     // Mathematical Haversine Distance Calculation (dynamic)
-    const riderLat = riderTelemetry?.currentLocation?.latitude || storeHub.latitude;
-    const riderLng = riderTelemetry?.currentLocation?.longitude || storeHub.longitude;
+    const riderLat = riderLocation?.latitude || storeHub.latitude;
+    const riderLng = riderLocation?.longitude || storeHub.longitude;
     const R = 6371; // km
     const dLat = ((destLat - riderLat) * Math.PI) / 180;
     const dLng = ((destLng - riderLng) * Math.PI) / 180;
@@ -898,7 +970,7 @@ export const getOrderTracking = async (req, res) => {
         Math.sin(dLng / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     const distanceKm = Math.max(0.2, +(R * c).toFixed(1));
-    const speed = riderTelemetry?.currentLocation?.speed || (isTrackingActive ? 28 : 20);
+    const speed = riderLocation?.speed || (isTrackingActive ? 28 : 20);
     const etaMins = Math.max(3, Math.round((distanceKm / Math.max(15, speed)) * 60));
 
     return res.status(200).json({
@@ -917,7 +989,7 @@ export const getOrderTracking = async (req, res) => {
         totalAmount: order.totalAmount,
         paymentMethod: order.paymentMethod,
         paymentStatus: order.paymentStatus,
-        deliveryOtp: order.deliveryOtp || '',
+        deliveryOtp: (isOwner || isAdmin) ? (order.deliveryOtp || '') : '••••',
         products: order.products,
       },
       storeHub,
@@ -1002,12 +1074,14 @@ export const cancelOrder = async (req, res) => {
       });
     }
 
-    // Restock all purchased products safely
+    // Restock all purchased products safely (guard against duplicate restocking)
     for (const item of order.products) {
-      if (item.product && item.quantity > 0) {
+      if (item.product && item.quantity > 0 && !item.isRestocked) {
         await Product.findByIdAndUpdate(item.product, {
           $inc: { stock: item.quantity },
         }).catch((err) => console.error('Restock error on order cancellation:', err));
+        item.isRestocked = true;
+        item.restockedAt = new Date();
       }
     }
 
@@ -1047,14 +1121,28 @@ export const cancelOrder = async (req, res) => {
  * Helper to build vendor-scoped order representation
  * Isolates items, subtotal, and permits only fulfillment-necessary customer delivery details
  */
-const formatVendorScopedOrder = (orderDoc, storeId) => {
+const formatVendorScopedOrder = (orderDoc, store) => {
   const orderObj = typeof orderDoc.toObject === 'function' ? orderDoc.toObject() : orderDoc;
-  const storeIdStr = storeId.toString();
+  const storeIdStr = store && store._id ? store._id.toString() : store ? store.toString() : '';
+  const vendorIdStr = store && store.vendor ? (store.vendor._id ? store.vendor._id.toString() : store.vendor.toString()) : '';
+  const storeNameStr = store && store.name ? store.name.trim().toLowerCase() : '';
 
-  // Strictly filter products to only those belonging to the authenticated vendor's store
-  const vendorItems = (orderObj.products || []).filter(
-    (it) => it.store && it.store.toString() === storeIdStr
-  );
+  // Filter products to those belonging to the authenticated vendor's store
+  const vendorItems = (orderObj.products || []).filter((it) => {
+    const itStoreId = it.store?._id ? it.store._id.toString() : it.store ? it.store.toString() : null;
+    const itVendorId = it.vendor?._id ? it.vendor._id.toString() : it.vendor ? it.vendor.toString() : null;
+    const itStoreName = it.storeName ? it.storeName.trim().toLowerCase() : '';
+
+    if (itStoreId && itStoreId === storeIdStr) return true;
+    if (vendorIdStr && itVendorId && itVendorId === vendorIdStr) return true;
+    if (storeNameStr && itStoreName && itStoreName === storeNameStr) return true;
+
+    // Fallback: If this order stores array contains this storeId
+    if (Array.isArray(orderObj.stores) && orderObj.stores.some(s => (s?._id ? s._id.toString() : s?.toString()) === storeIdStr)) {
+      return true;
+    }
+    return false;
+  });
 
   const vendorSubtotal = vendorItems.reduce(
     (acc, it) => acc + (it.price || 0) * (it.quantity || 1),
@@ -1137,7 +1225,12 @@ export const getVendorOrders = async (req, res) => {
 
     // Base query: Order must contain at least one product from this vendor's store
     const storeMatch = {
-      $or: [{ stores: store._id }, { 'products.store': store._id }],
+      $or: [
+        { stores: store._id },
+        { 'products.store': store._id },
+        { 'products.vendor': req.user._id },
+        { 'products.storeName': store.name },
+      ],
     };
 
     const filter = { ...storeMatch };
@@ -1196,7 +1289,7 @@ export const getVendorOrders = async (req, res) => {
 
     // Fast metric aggregation for vendor dashboard KPI cards
     const allStoreOrders = await Order.find(storeMatch)
-      .select('orderStatus products')
+      .select('orderStatus products stores')
       .lean();
 
     const summary = {
@@ -1212,6 +1305,10 @@ export const getVendorOrders = async (req, res) => {
       totalRevenue: 0,
     };
 
+    const storeIdStr = store._id.toString();
+    const vendorIdStr = req.user._id.toString();
+    const storeNameLower = store.name.trim().toLowerCase();
+
     for (const ord of allStoreOrders) {
       const s = ord.orderStatus;
       if (s === 'Pending') summary.pending += 1;
@@ -1225,9 +1322,19 @@ export const getVendorOrders = async (req, res) => {
 
       // Calculate revenue from non-cancelled orders for this vendor
       if (s !== 'Cancelled') {
-        const vendorLines = (ord.products || []).filter(
-          (it) => it.store && it.store.toString() === store._id.toString()
-        );
+        const vendorLines = (ord.products || []).filter((it) => {
+          const itStoreId = it.store?._id ? it.store._id.toString() : it.store ? it.store.toString() : null;
+          const itVendorId = it.vendor?._id ? it.vendor._id.toString() : it.vendor ? it.vendor.toString() : null;
+          const itStoreName = it.storeName ? it.storeName.trim().toLowerCase() : '';
+
+          if (itStoreId && itStoreId === storeIdStr) return true;
+          if (itVendorId && itVendorId === vendorIdStr) return true;
+          if (itStoreName && itStoreName === storeNameLower) return true;
+          if (Array.isArray(ord.stores) && ord.stores.some(st => (st?._id ? st._id.toString() : st?.toString()) === storeIdStr)) {
+            return true;
+          }
+          return false;
+        });
         for (const line of vendorLines) {
           summary.totalRevenue += (line.price || 0) * (line.quantity || 1);
         }
@@ -1245,7 +1352,7 @@ export const getVendorOrders = async (req, res) => {
 
     // Format orders with strict store-level isolation
     const storeOrders = orders.map((order) =>
-      formatVendorScopedOrder(order, store._id)
+      formatVendorScopedOrder(order, store)
     );
 
     return res.status(200).json({

@@ -66,3 +66,361 @@
     color: var(--color-brand-black);
   }
 }
+
+/* ==========================================================================
+   Ultra-Premium Luxury Dark Mode Design System
+   Velvet Obsidian, Midnight Slate & Radiant Champagne Gold
+   Maintains 100% of existing responsive layouts with zero structural changes.
+   ========================================================================== */
+html.dark {
+  color-scheme: dark;
+
+  /* Luxury Dark Palette: Velvet Obsidian & Deep Titanium */
+  --color-brand-offwhite: #0B0C11;
+  --color-brand-surface: #13151D;
+  --color-brand-cream: #1A1D27;
+
+  /* Typography: Polished Platinum & Titanium Grey */
+  --color-brand-black: #F8F9FA;
+  --color-brand-charcoal: #E5E7EB;
+  --color-brand-muted: #9CA3AF;
+  --color-brand-subtle: #717684;
+
+  /* Borders & Dividers */
+  --color-brand-border: #262836;
+  --color-brand-border-light: #1D1F2A;
+
+  /* Elegant Accent: Radiant Champagne Gold */
+  --color-brand-accent: #D4AF37;
+  --color-brand-accent-hover: #E5C158;
+  --color-brand-accent-light: #242017;
+}
+
+html.dark,
+html.dark body {
+  background-color: var(--color-brand-offwhite);
+  color: var(--color-brand-charcoal);
+}
+
+html.dark *,
+html.dark *::before,
+html.dark *::after {
+  border-color: var(--color-brand-border);
+}
+
+/* Glassmorphic Dark Navigation Header */
+html.dark header {
+  background-color: rgba(19, 21, 29, 0.88) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Deep Obsidian Surfaces & Cards */
+html.dark .bg-white {
+  background-color: var(--color-brand-surface) !important;
+}
+
+html.dark .bg-gray-50 {
+  background-color: var(--color-brand-cream) !important;
+}
+
+html.dark .bg-gray-100 {
+  background-color: #212431 !important;
+}
+
+html.dark .bg-brand-cream,
+html.dark .bg-brand-cream\/50,
+html.dark .bg-brand-cream\/60,
+html.dark .bg-brand-cream\/70 {
+  background-color: #1A1D27 !important;
+}
+
+html.dark .bg-brand-offwhite {
+  background-color: var(--color-brand-offwhite) !important;
+}
+
+/* High-Legibility Typography in Dark Mode */
+html.dark .text-gray-900,
+html.dark .text-slate-900 {
+  color: var(--color-brand-black) !important;
+}
+
+html.dark .text-gray-800,
+html.dark .text-slate-800 {
+  color: var(--color-brand-charcoal) !important;
+}
+
+html.dark .text-gray-700,
+html.dark .text-slate-700 {
+  color: #D1D5DB !important;
+}
+
+html.dark .text-gray-600,
+html.dark .text-slate-600 {
+  color: var(--color-brand-muted) !important;
+}
+
+html.dark .text-gray-500,
+html.dark .text-slate-500 {
+  color: #8C92A4 !important;
+}
+
+/* Refined Dark Borders */
+html.dark .border-gray-200,
+html.dark .border-gray-100,
+html.dark .border-slate-200,
+html.dark .border-brand-border {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Luxury Input & Form Styling */
+html.dark input,
+html.dark select,
+html.dark textarea {
+  color-scheme: dark;
+  background-color: #181A23 !important;
+  color: #F8F9FA !important;
+  border-color: #2C2F3D !important;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: #717688 !important;
+}
+
+html.dark input:focus,
+html.dark select:focus,
+html.dark textarea:focus {
+  border-color: var(--color-brand-accent) !important;
+  box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.22) !important;
+}
+
+/* High-End Dark Shadows & Glowing Product Cards */
+html.dark .shadow-sm {
+  box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.5) !important;
+}
+
+html.dark .shadow,
+html.dark .shadow-md {
+  box-shadow: 0 6px 18px -4px rgba(0, 0, 0, 0.65) !important;
+}
+
+html.dark .shadow-lg,
+html.dark .shadow-xl {
+  box-shadow: 0 14px 32px -8px rgba(0, 0, 0, 0.8) !important;
+}
+
+html.dark .hover\:shadow-md:hover,
+html.dark .hover\:shadow-lg:hover,
+html.dark .group:hover .shadow-sm {
+  box-shadow: 0 12px 28px -6px rgba(0, 0, 0, 0.7), 0 0 16px 1px rgba(212, 175, 55, 0.12) !important;
+}
+
+/* Dark Mode Scrollbars */
+html.dark ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+html.dark ::-webkit-scrollbar-track {
+  background: #0B0C11;
+}
+html.dark ::-webkit-scrollbar-thumb {
+  background: #252836;
+  border-radius: 4px;
+}
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: #373A4D;
+}
+
+/* ==========================================================================
+   BUTTON & INTERACTIVE TEXT READABILITY IN DARK MODE
+   Ensure all primary, accent, outline, filter & action buttons have
+   100% crystal-clear readability and ultra-luxurious styling
+   ========================================================================== */
+
+/* Primary buttons & elements styled with bg-brand-black and text-white:
+   Give them Radiant Champagne Gold background with deep dark text for supreme luxury and contrast */
+html.dark button.bg-brand-black,
+html.dark a.bg-brand-black,
+html.dark [role="button"].bg-brand-black,
+html.dark input[type="submit"].bg-brand-black,
+html.dark input[type="button"].bg-brand-black {
+  background-color: var(--color-brand-accent) !important;
+  color: #0B0C11 !important;
+  font-weight: 600 !important;
+}
+
+html.dark button.bg-brand-black:hover,
+html.dark a.bg-brand-black:hover,
+html.dark [role="button"].bg-brand-black:hover {
+  background-color: var(--color-brand-accent-hover) !important;
+  color: #0B0C11 !important;
+}
+
+/* Any SVG icon inside primary buttons */
+html.dark button.bg-brand-black svg,
+html.dark a.bg-brand-black svg {
+  color: #0B0C11 !important;
+  stroke: #0B0C11 !important;
+}
+
+/* Buttons with bg-brand-accent */
+html.dark button.bg-brand-accent,
+html.dark a.bg-brand-accent {
+  background-color: var(--color-brand-accent) !important;
+  color: #0B0C11 !important;
+  font-weight: 600 !important;
+}
+html.dark button.bg-brand-accent svg,
+html.dark a.bg-brand-accent svg {
+  color: #0B0C11 !important;
+  stroke: #0B0C11 !important;
+}
+
+/* Outline button hover states */
+html.dark button:hover.hover\:bg-brand-black,
+html.dark a:hover.hover\:bg-brand-black,
+html.dark button:hover.hover\:bg-brand-charcoal,
+html.dark a:hover.hover\:bg-brand-charcoal {
+  background-color: var(--color-brand-accent) !important;
+  color: #0B0C11 !important;
+  border-color: var(--color-brand-accent) !important;
+}
+
+/* Filter pills and active tab states across Shop, Orders, Admin, Vendor, Delivery */
+html.dark button.bg-brand-black.text-white,
+html.dark a.bg-brand-black.text-white,
+html.dark span.bg-brand-black.text-white {
+  background-color: var(--color-brand-accent) !important;
+  color: #0B0C11 !important;
+  font-weight: 600 !important;
+}
+html.dark button.bg-brand-black.text-white span,
+html.dark button.bg-brand-black.text-white svg {
+  color: #0B0C11 !important;
+  stroke: #0B0C11 !important;
+}
+
+/* Secondary & pill buttons in dark mode */
+html.dark button.bg-brand-cream,
+html.dark a.bg-brand-cream {
+  background-color: #1E212B !important;
+  color: #F8F9FA !important;
+}
+html.dark button.bg-brand-cream:hover,
+html.dark a.bg-brand-cream:hover {
+  background-color: #282B37 !important;
+  color: #FFFFFF !important;
+}
+
+/* Keep Sidebars Deep Obsidian in Dark Mode (Admin, Vendor, Delivery Boy) */
+html.dark aside.bg-brand-black {
+  background-color: #0D0E14 !important;
+  color: #F8F9FA !important;
+}
+html.dark aside.bg-brand-black .text-white {
+  color: #FFFFFF !important;
+}
+html.dark aside.bg-brand-black svg {
+  stroke: currentColor;
+}
+
+/* Backdrop Overlays (Modals, drawers) */
+html.dark .bg-brand-black\/60,
+html.dark .bg-brand-black\/70 {
+  background-color: rgba(0, 0, 0, 0.78) !important;
+}
+
+/* ==========================================================================
+   NAVIGATION MENU & DROPDOWN READABILITY IN DARK MODE
+   ========================================================================== */
+html.dark nav a,
+html.dark nav button {
+  color: #E5E7EB;
+}
+html.dark nav a:hover,
+html.dark nav button:hover {
+  color: var(--color-brand-accent);
+}
+
+/* Dropdown menus & collections panel */
+html.dark .bg-brand-surface {
+  background-color: var(--color-brand-surface) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+html.dark .text-brand-charcoal {
+  color: #E5E7EB !important;
+}
+
+html.dark .text-brand-black {
+  color: #F8F9FA !important;
+}
+
+/* Category dropdown item hover */
+html.dark .hover\:text-brand-black:hover {
+  color: #FFFFFF !important;
+}
+html.dark .hover\:bg-brand-cream\/60:hover {
+  background-color: #212534 !important;
+}
+
+/* Collections item count badge */
+html.dark span.bg-brand-offwhite {
+  background-color: #1E212B !important;
+  color: #D1D5DB !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Mobile category tags */
+html.dark a.bg-brand-cream\/60 {
+  background-color: #1E212B !important;
+  color: #E5E7EB !important;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+html.dark a.bg-brand-cream\/60:hover {
+  background-color: #282B37 !important;
+  color: #FFFFFF !important;
+}
+
+/* Status Badges & Portal Pills in dark mode */
+html.dark .text-amber-800,
+html.dark .text-amber-900 {
+  color: #FCD34D !important; /* Radiant Gold / Amber */
+}
+html.dark .text-emerald-800,
+html.dark .text-emerald-900,
+html.dark .text-emerald-950 {
+  color: #6EE7B7 !important; /* Luminous Emerald Mint */
+}
+html.dark .text-rose-800,
+html.dark .text-rose-900 {
+  color: #FDA4AF !important; /* Crisp Rose */
+}
+html.dark .text-blue-800,
+html.dark .text-blue-900 {
+  color: #93C5FD !important; /* Sky Blue */
+}
+
+html.dark .bg-amber-50,
+html.dark .bg-amber-100 {
+  background-color: rgba(245, 158, 11, 0.15) !important;
+  border-color: rgba(245, 158, 11, 0.3) !important;
+}
+html.dark .bg-emerald-50,
+html.dark .bg-emerald-100 {
+  background-color: rgba(16, 185, 129, 0.15) !important;
+  border-color: rgba(16, 185, 129, 0.3) !important;
+}
+html.dark .bg-rose-50,
+html.dark .bg-rose-100 {
+  background-color: rgba(244, 63, 94, 0.15) !important;
+  border-color: rgba(244, 63, 94, 0.3) !important;
+}
+
+/* Smooth Hardware-Accelerated Theme Transitions */
+html {
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+

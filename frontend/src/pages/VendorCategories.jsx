@@ -290,7 +290,8 @@ export default function VendorCategories() {
           icon={Package}
           className="text-xs shadow-xs"
         >
-          <span>Catalog Products</span>
+          <span className="hidden sm:inline">Catalog Products</span>
+          <span className="sm:hidden">Products</span>
         </Button>
       </Link>
     </div>
@@ -640,8 +641,8 @@ export default function VendorCategories() {
 
       {/* Category Atelier Showcase Modal */}
       {selectedCategoryModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-brand-surface border border-brand-border rounded-2xl max-w-xl w-full p-6 text-left space-y-5 shadow-2xl animate-in fade-in max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-brand-surface border border-brand-border rounded-2xl max-w-xl w-full p-4 sm:p-6 text-left space-y-5 shadow-2xl animate-in fade-in max-h-[92vh] overflow-y-auto">
             <div className="flex items-start justify-between pb-3 border-b border-brand-border/70">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-xl bg-brand-offwhite border border-brand-border overflow-hidden flex items-center justify-center shrink-0">
@@ -846,8 +847,8 @@ export default function VendorCategories() {
 
       {/* Request New Category Modal */}
       {isRequestModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-brand-surface border border-brand-border rounded-2xl max-w-md w-full p-6 text-left space-y-4 shadow-xl animate-in fade-in">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-brand-surface border border-brand-border rounded-2xl max-w-md w-full p-4 sm:p-6 text-left space-y-4 shadow-xl animate-in fade-in max-h-[92vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-brand-border/70">
               <div className="flex items-center gap-2">
                 <Tag size={18} className="text-brand-accent" />

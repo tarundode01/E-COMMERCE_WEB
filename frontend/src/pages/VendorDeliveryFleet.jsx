@@ -70,14 +70,14 @@ function FleetStatusBadge({ status }) {
     case 'available':
       return (
         <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-700 border border-emerald-500/20">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
           Available
         </span>
       );
     case 'on_delivery':
       return (
         <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-blue-500/10 text-blue-700 border border-blue-500/20">
-          <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-ping" />
+          <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
           On Delivery
         </span>
       );
@@ -513,32 +513,20 @@ export default function VendorDeliveryFleet() {
       subtitle="Manage your store's private delivery agents, create new accounts, and monitor real-time GPS locations."
       actions={
         <div className="flex items-center gap-2">
-          {/* Live Simulation Pulse Button */}
-          <button
-            type="button"
-            onClick={handleSimulateLivePulse}
-            disabled={simulating}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-brand-surface border border-brand-border text-brand-charcoal hover:bg-brand-cream/60 transition-all shadow-2xs cursor-pointer disabled:opacity-60"
-            title="Simulate realistic GPS telemetry step"
-          >
-            <RefreshCw size={13} className={simulating ? 'animate-spin text-brand-accent' : 'text-neutral-500'} />
-            <span className="hidden sm:inline">Simulate GPS Movement</span>
-            <span className="sm:hidden">Pulse</span>
-          </button>
-
           {/* Auto Radar Toggle */}
           <button
             type="button"
             onClick={() => setAutoRadar((prev) => !prev)}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl border transition-all cursor-pointer shadow-2xs ${
+            className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-semibold rounded-xl border transition-all cursor-pointer shadow-2xs ${
               autoRadar
                 ? 'bg-emerald-500/10 text-emerald-700 border-emerald-500/30 font-bold'
                 : 'bg-brand-surface text-brand-muted border-brand-border hover:text-brand-black'
             }`}
             title="Toggle automatic live radar refresh every 7 seconds"
           >
-            <Radio size={13} className={autoRadar ? 'text-emerald-500 animate-pulse' : 'text-neutral-400'} />
-            <span>{autoRadar ? 'Radar Active' : 'Live Radar'}</span>
+            <Radio size={13} className={autoRadar ? 'text-emerald-600' : 'text-neutral-400'} />
+            <span className="hidden xs:inline">{autoRadar ? 'Radar Active' : 'Live Radar'}</span>
+            <span className="xs:hidden">Radar</span>
           </button>
 
           {/* Register Agent Button */}
@@ -549,7 +537,8 @@ export default function VendorDeliveryFleet() {
             onClick={openCreateModal}
             className="text-xs bg-amber-500 hover:bg-amber-600 text-neutral-950 font-bold border-amber-400 shadow-xs"
           >
-            + Register Delivery Agent
+            <span className="hidden sm:inline">Register Delivery Agent</span>
+            <span className="sm:hidden">Add Agent</span>
           </Button>
         </div>
       }
@@ -611,7 +600,7 @@ export default function VendorDeliveryFleet() {
               On Active Delivery
             </span>
             <div className="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-600 flex items-center justify-center">
-              <Navigation size={16} className="animate-pulse" />
+              <Navigation size={16} />
             </div>
           </div>
           <div className="mt-3 flex items-baseline gap-2">
@@ -679,7 +668,7 @@ export default function VendorDeliveryFleet() {
         onToggleAutoRadar={() => setAutoRadar((prev) => !prev)}
         onSimulateMovement={handleSimulateLivePulse}
         simulating={simulating}
-        height="h-[480px] sm:h-[580px]"
+        height="h-[360px] sm:h-[480px] lg:h-[580px]"
       />
 
       {/* ========================================================================= */}
@@ -698,16 +687,16 @@ export default function VendorDeliveryFleet() {
           </div>
 
           {/* Search & Filter Bar */}
-          <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto">
             {/* Search Input */}
-            <div className="relative min-w-[200px] sm:w-64">
+            <div className="relative w-full sm:w-64">
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
               <input
                 type="text"
                 placeholder="Search name, phone, plate..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-1.5 text-xs bg-brand-offwhite border border-brand-border rounded-xl focus:outline-none focus:ring-1 focus:ring-amber-500 text-brand-black placeholder:text-neutral-400"
+                className="w-full pl-9 pr-3 py-2 sm:py-1.5 text-xs bg-brand-offwhite border border-brand-border rounded-xl focus:outline-none focus:ring-1 focus:ring-amber-500 text-brand-black placeholder:text-neutral-400"
               />
               {searchQuery && (
                 <button
@@ -724,7 +713,7 @@ export default function VendorDeliveryFleet() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="py-1.5 px-3 text-xs bg-brand-offwhite border border-brand-border rounded-xl focus:outline-none focus:ring-1 focus:ring-amber-500 text-brand-black font-medium cursor-pointer"
+              className="py-2 sm:py-1.5 px-3 text-xs bg-brand-offwhite border border-brand-border rounded-xl focus:outline-none focus:ring-1 focus:ring-amber-500 text-brand-black font-medium cursor-pointer w-full sm:w-auto"
             >
               <option value="all">All Statuses</option>
               <option value="available">Available</option>
@@ -763,8 +752,142 @@ export default function VendorDeliveryFleet() {
             </Button>
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-2xl border border-brand-border/60">
-            <table className="w-full text-left text-xs">
+          <>
+            {/* Mobile Cards View (Visible on screens < md) */}
+            <div className="md:hidden space-y-3">
+              {deliveryBoys.map((agent) => {
+                const isSelected = selectedAgent?._id === agent._id;
+                return (
+                  <div
+                    key={agent._id}
+                    className={`p-4 rounded-2xl border transition-all text-left space-y-3 ${
+                      isSelected
+                        ? 'bg-amber-50/70 border-amber-400 shadow-sm'
+                        : 'bg-brand-surface border-brand-border/80 shadow-2xs hover:border-brand-accent/50'
+                    }`}
+                  >
+                    {/* Header: Avatar, Name, Status */}
+                    <div className="flex items-start justify-between gap-2.5">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-10 h-10 rounded-full bg-brand-accent/20 text-brand-black font-bold flex items-center justify-center text-xs shrink-0 border border-brand-accent/30">
+                          {agent.name
+                            .split(' ')
+                            .map((n) => n[0])
+                            .slice(0, 2)
+                            .join('')}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-bold text-sm text-brand-black truncate">{agent.name}</p>
+                          <div className="flex items-center gap-1.5 text-[11px] text-neutral-500 font-mono mt-0.5 truncate">
+                            <VehicleIcon type={agent.vehicleType} className="w-3 h-3 text-neutral-400 shrink-0" />
+                            <span>{agent.vehicleType}</span>
+                            <span>•</span>
+                            <span className="font-bold text-brand-black truncate">{agent.vehicleNumber || 'No Plate'}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <FleetStatusBadge status={agent.status} />
+                    </div>
+
+                    {/* Middle Details Grid */}
+                    <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-brand-border/40">
+                      <div className="p-2.5 rounded-xl bg-brand-offwhite min-w-0">
+                        <span className="text-[10px] text-brand-muted uppercase font-bold block">Contact</span>
+                        <a
+                          href={`tel:${agent.phone}`}
+                          className="font-mono text-xs font-semibold text-brand-black hover:text-amber-600 truncate block mt-0.5"
+                        >
+                          📞 {agent.phone}
+                        </a>
+                      </div>
+
+                      <div className="p-2.5 rounded-xl bg-brand-offwhite min-w-0">
+                        <span className="text-[10px] text-brand-muted uppercase font-bold block">Performance</span>
+                        <p className="text-xs font-bold text-brand-black mt-0.5">
+                          {agent.totalDeliveriesCompleted || 0} drops <span className="text-amber-600">★ {agent.rating ? agent.rating.toFixed(1) : '5.0'}</span>
+                        </p>
+                      </div>
+
+                      <div className="col-span-2 p-2.5 rounded-xl bg-brand-offwhite text-[11px]">
+                        <span className="text-[10px] text-brand-muted uppercase font-bold block flex items-center gap-1">
+                          <MapPin size={10} className="text-amber-500 shrink-0" />
+                          <span>GPS Landmark</span>
+                        </span>
+                        <p className="text-neutral-700 truncate mt-0.5 font-medium">
+                          {agent.currentLocation?.address || 'Indore Central Hub'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Card Actions Footer */}
+                    <div className="flex items-center justify-between gap-2 pt-2 border-t border-brand-border/40">
+                      <div className="flex items-center gap-1.5">
+                        {/* Focus on radar */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedAgent(agent);
+                            window.scrollTo({ top: 150, behavior: 'smooth' });
+                          }}
+                          className="px-2.5 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-semibold border border-amber-200 flex items-center gap-1 cursor-pointer transition-colors"
+                          title="Focus on Radar Map"
+                        >
+                          <Navigation size={13} />
+                          <span>Radar</span>
+                        </button>
+
+                        {/* Edit Agent */}
+                        <button
+                          type="button"
+                          onClick={() => openEditModal(agent)}
+                          className="p-1.5 text-neutral-600 hover:text-brand-black bg-neutral-100 hover:bg-neutral-200 rounded-xl transition-colors cursor-pointer"
+                          title="Edit Agent Details"
+                        >
+                          <Edit3 size={14} />
+                        </button>
+
+                        {/* Delete Agent */}
+                        <button
+                          type="button"
+                          onClick={() => setDeleteConfirmId(agent._id)}
+                          className="p-1.5 text-neutral-400 hover:text-rose-600 bg-neutral-100 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
+                          title="Remove Agent"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+
+                      {/* Quick dispatch or complete order */}
+                      {agent.activeOrderId || agent.status === 'on_delivery' ? (
+                        <button
+                          type="button"
+                          onClick={() => handleCompleteOrder(agent.activeOrderId)}
+                          disabled={completingOrderId === agent.activeOrderId}
+                          className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer flex items-center gap-1 disabled:opacity-50"
+                        >
+                          <CheckCircle2 size={13} />
+                          <span>Delivered</span>
+                        </button>
+                      ) : agent.status === 'available' ? (
+                        <button
+                          type="button"
+                          onClick={() => openDispatchModal(agent)}
+                          className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-neutral-950 font-bold border border-amber-400 rounded-xl text-xs transition-all shadow-xs cursor-pointer flex items-center gap-1"
+                        >
+                          <Package size={13} />
+                          <span>Dispatch</span>
+                        </button>
+                      ) : null}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Desktop Table View (Visible on md and larger) */}
+            <div className="hidden md:block overflow-x-auto rounded-2xl border border-brand-border/60">
+              <table className="w-full text-left text-xs">
               <thead className="bg-brand-cream/40 border-b border-brand-border text-neutral-500 uppercase tracking-wider text-[10px] font-bold">
                 <tr>
                   <th className="py-3 px-4">Delivery Agent</th>
@@ -939,15 +1062,16 @@ export default function VendorDeliveryFleet() {
               </tbody>
             </table>
           </div>
-        )}
+        </>
+      )}
       </div>
 
       {/* ========================================================================= */}
       {/* 3.5 DISPATCH ORDER TO AGENT MODAL */}
       {/* ========================================================================= */}
       {dispatchModalAgent && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="bg-brand-surface border border-brand-border rounded-3xl max-w-xl w-full p-6 sm:p-8 text-left shadow-2xl animate-in zoom-in-95 duration-200 overflow-y-auto max-h-[90vh]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs">
+          <div className="bg-brand-surface border border-brand-border rounded-3xl max-w-xl w-full p-4 sm:p-8 text-left shadow-2xl animate-in zoom-in-95 duration-200 overflow-y-auto max-h-[92vh]">
             <div className="flex items-center justify-between pb-4 border-b border-brand-border">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center border border-amber-500/20">
@@ -1102,8 +1226,8 @@ export default function VendorDeliveryFleet() {
       {/* 4. CREATE DELIVERY AGENT MODAL */}
       {/* ========================================================================= */}
       {isCreateModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="bg-brand-surface border border-brand-border rounded-3xl max-w-lg w-full p-6 sm:p-8 text-left shadow-2xl animate-in zoom-in-95 duration-200 overflow-y-auto max-h-[90vh]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs">
+          <div className="bg-brand-surface border border-brand-border rounded-3xl max-w-lg w-full p-4 sm:p-8 text-left shadow-2xl animate-in zoom-in-95 duration-200 overflow-y-auto max-h-[92vh]">
             <div className="flex items-center justify-between pb-4 border-b border-brand-border">
               <div>
                 <h3 className="font-serif text-lg font-bold text-brand-black">
@@ -1286,8 +1410,8 @@ export default function VendorDeliveryFleet() {
       {/* 5. EDIT DELIVERY AGENT MODAL */}
       {/* ========================================================================= */}
       {isEditModalOpen && agentToEdit && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="bg-brand-surface border border-brand-border rounded-3xl max-w-lg w-full p-6 sm:p-8 text-left shadow-2xl animate-in zoom-in-95 duration-200 overflow-y-auto max-h-[90vh]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs">
+          <div className="bg-brand-surface border border-brand-border rounded-3xl max-w-lg w-full p-4 sm:p-8 text-left shadow-2xl animate-in zoom-in-95 duration-200 overflow-y-auto max-h-[92vh]">
             <div className="flex items-center justify-between pb-4 border-b border-brand-border">
               <div>
                 <h3 className="font-serif text-lg font-bold text-brand-black">

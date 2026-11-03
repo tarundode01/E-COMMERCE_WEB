@@ -131,7 +131,8 @@ export default function VendorDashboard() {
             <>
               <Link to="/vendor/products">
                 <Button variant="outline" size="sm" icon={Plus} className="text-xs">
-                  <span>Add Creation</span>
+                  <span className="hidden sm:inline">Add Creation</span>
+                  <span className="sm:hidden">Add</span>
                 </Button>
               </Link>
               <Link to="/vendor/delivery-boys">
@@ -141,7 +142,8 @@ export default function VendorDashboard() {
                   icon={Bike}
                   className="text-xs bg-amber-500 hover:bg-amber-600 text-neutral-950 font-bold border-amber-400"
                 >
-                  <span>Delivery Agents ({deliveryCount})</span>
+                  <span className="hidden md:inline">Delivery Agents ({deliveryCount})</span>
+                  <span className="md:hidden">Agents ({deliveryCount})</span>
                 </Button>
               </Link>
             </>

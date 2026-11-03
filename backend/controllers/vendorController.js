@@ -856,6 +856,7 @@ export const getVendorAnalytics = async (req, res) => {
         { stores: store._id },
         { 'products.store': store._id },
         { 'products.vendor': req.user._id },
+        { 'products.storeName': store.name },
       ],
     };
 
@@ -882,6 +883,24 @@ export const getVendorAnalytics = async (req, res) => {
 
     const productSalesMap = new Map();
     const timelineMap = new Map();
+    const storeNameLower = store.name.trim().toLowerCase();
+    const vendorIdStr = req.user._id.toString();
+
+    const getOrderVendorLines = (ord) => {
+      return (ord.products || []).filter((it) => {
+        const itStoreId = it.store?._id ? it.store._id.toString() : it.store ? it.store.toString() : null;
+        const itVendorId = it.vendor?._id ? it.vendor._id.toString() : it.vendor ? it.vendor.toString() : null;
+        const itStoreName = it.storeName ? it.storeName.trim().toLowerCase() : '';
+
+        if (itStoreId && itStoreId === storeIdStr) return true;
+        if (itVendorId && itVendorId === vendorIdStr) return true;
+        if (itStoreName && itStoreName === storeNameLower) return true;
+        if (Array.isArray(ord.stores) && ord.stores.some(st => (st?._id ? st._id.toString() : st?.toString()) === storeIdStr)) {
+          return true;
+        }
+        return false;
+      });
+    };
 
     for (const ord of orders) {
       const s = ord.orderStatus;
@@ -895,11 +914,7 @@ export const getVendorAnalytics = async (req, res) => {
       else if (s === 'Cancelled') cancelledOrders += 1;
 
       // Extract only vendor's store items
-      const vendorLines = (ord.products || []).filter(
-        (it) =>
-          (it.store && it.store.toString() === storeIdStr) ||
-          (it.vendor && it.vendor.toString() === req.user._id.toString())
-      );
+      const vendorLines = getOrderVendorLines(ord);
 
       let orderVendorTotal = 0;
       let orderVendorUnits = 0;
@@ -984,11 +999,7 @@ export const getVendorAnalytics = async (req, res) => {
     // Format latest 5 recent orders scoped to this vendor (filter out orders with no items for this vendor)
     const recentOrders = orders
       .map((ord) => {
-        const vendorItems = (ord.products || []).filter(
-          (it) =>
-            (it.store && it.store.toString() === storeIdStr) ||
-            (it.vendor && it.vendor.toString() === req.user._id.toString())
-        );
+        const vendorItems = getOrderVendorLines(ord);
         if (!vendorItems || vendorItems.length === 0) return null;
 
         const subtotal = vendorItems.reduce(

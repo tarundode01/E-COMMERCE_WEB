@@ -230,19 +230,19 @@ export default function VendorAnalytics() {
   const totalValidOrders = summary.totalOrders || 0;
 
   const pageActions = (
-    <div className="flex items-center gap-2.5">
-      <div className="inline-flex rounded-xl border border-brand-border/80 bg-brand-surface p-1 shadow-2xs">
+    <div className="flex items-center gap-2">
+      <div className="inline-flex rounded-xl border border-brand-border/80 bg-brand-surface p-1 shadow-2xs overflow-x-auto [scrollbar-width:none]">
         {[
-          { id: 'all', label: 'All Time' },
-          { id: '30d', label: '30 Days' },
-          { id: '7d', label: '7 Days' },
-          { id: '1y', label: '1 Year' },
+          { id: 'all', label: 'All' },
+          { id: '30d', label: '30D' },
+          { id: '7d', label: '7D' },
+          { id: '1y', label: '1Y' },
         ].map((tf) => (
           <button
             key={tf.id}
             type="button"
             onClick={() => setTimeframe(tf.id)}
-            className={`px-2.5 py-1 text-[11px] font-semibold rounded-lg transition-colors cursor-pointer ${
+            className={`px-2 sm:px-2.5 py-1 text-[10px] sm:text-[11px] font-semibold rounded-lg transition-colors cursor-pointer whitespace-nowrap ${
               timeframe === tf.id
                 ? 'bg-brand-black text-white shadow-xs'
                 : 'text-brand-muted hover:text-brand-black'

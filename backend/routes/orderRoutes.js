@@ -60,6 +60,7 @@ router.get('/:id/track', getOrderTracking);
 // @access  Private
 router.patch('/:id/cancel', cancelOrder);
 router.put('/:id/cancel', cancelOrder); // Backward-compatible alias
+router.post('/:id/cancel', cancelOrder); // Backward-compatible alias
 
 // @route   PATCH /api/orders/:id/status
 // @desc    Update order status (admin only)

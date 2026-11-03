@@ -187,6 +187,8 @@ export default function VendorOrders() {
   const [orderToAssign, setOrderToAssign] = useState(null);
   const [selectedDeliveryBoyId, setSelectedDeliveryBoyId] = useState('');
   const [assignDeliveryNotes, setAssignDeliveryNotes] = useState('');
+  const [isAssigningDelivery, setIsAssigningDelivery] = useState(false);
+  const [assignModalError, setAssignModalError] = useState('');
   // Live Radar Tracking Modal State
   const [trackingModalOrder, setTrackingModalOrder] = useState(null);
   const [trackingData, setTrackingData] = useState(null);
@@ -227,11 +229,14 @@ export default function VendorOrders() {
   const handleOpenAssignModal = (order) => {
     setOrderToAssign(order);
     setAssignDeliveryNotes(order.deliveryNotes || '');
+    setAssignModalError('');
+    fetchDeliveryFleet();
     if (order.deliveryBoy?._id || order.deliveryBoy) {
-      setSelectedDeliveryBoyId(order.deliveryBoy?._id || order.deliveryBoy);
+      const bId = order.deliveryBoy?._id ? order.deliveryBoy._id.toString() : order.deliveryBoy.toString();
+      setSelectedDeliveryBoyId(bId);
     } else {
       const availableBoy = deliveryFleet.find((b) => b.status === 'available');
-      setSelectedDeliveryBoyId(availableBoy?._id || deliveryFleet[0]?._id || '');
+      setSelectedDeliveryBoyId(availableBoy?._id ? availableBoy._id.toString() : (deliveryFleet[0]?._id?.toString() || ''));
     }
     setIsAssignModalOpen(true);
   };
@@ -243,10 +248,11 @@ export default function VendorOrders() {
 
     setIsAssigningDelivery(true);
     setActionError('');
+    setAssignModalError('');
     try {
       const res = await vendorDeliveryService.assignOrder(
         orderToAssign._id,
-        selectedDeliveryBoyId,
+        selectedDeliveryBoyId.toString(),
         assignDeliveryNotes
       );
       if (res && res.success) {
@@ -257,7 +263,9 @@ export default function VendorOrders() {
       }
     } catch (err) {
       console.error('Failed to assign delivery boy:', err);
-      setActionError(err.response?.data?.message || 'Failed to dispatch order to delivery agent.');
+      const errMsg = err.response?.data?.message || err.customMessage || 'Failed to dispatch order to delivery agent.';
+      setActionError(errMsg);
+      setAssignModalError(errMsg);
     } finally {
       setIsAssigningDelivery(false);
     }
@@ -764,7 +772,7 @@ export default function VendorOrders() {
       {/* ===================================================================== */}
       <div className="bg-brand-surface border border-brand-border/80 rounded-2xl p-5 sm:p-6 shadow-xs mb-8 space-y-5 text-left">
         {/* Status Tabs */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-brand-border/50">
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-brand-border/50 [scrollbar-width:none]">
           {statusFilterTabs.map((tab) => (
             <button
               key={tab.id}
@@ -1427,11 +1435,11 @@ export default function VendorOrders() {
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-black/60 backdrop-blur-xs animate-in fade-in duration-200"
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-brand-black/60 backdrop-blur-xs animate-in fade-in duration-200"
         >
-          <div className="bg-brand-surface border border-brand-border/80 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl text-left">
+          <div className="bg-brand-surface border border-brand-border/80 rounded-2xl w-full max-w-2xl max-h-[92vh] overflow-y-auto shadow-2xl text-left">
             {/* Modal Header */}
-            <div className="sticky top-0 bg-brand-surface/95 backdrop-blur-md p-5 sm:p-6 border-b border-brand-border/60 flex items-center justify-between z-10">
+            <div className="sticky top-0 bg-brand-surface/95 backdrop-blur-md p-4 sm:p-6 border-b border-brand-border/60 flex items-center justify-between z-10">
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-[11px] font-semibold uppercase tracking-wider text-brand-accent">
@@ -1651,9 +1659,9 @@ export default function VendorOrders() {
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-black/60 backdrop-blur-xs animate-in fade-in duration-200"
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-brand-black/60 backdrop-blur-xs animate-in fade-in duration-200"
         >
-          <div className="bg-brand-surface border border-brand-border/80 rounded-2xl w-full max-w-md p-6 shadow-2xl text-left space-y-4">
+          <div className="bg-brand-surface border border-brand-border/80 rounded-2xl w-full max-w-md p-4 sm:p-6 shadow-2xl text-left space-y-4 max-h-[92vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-brand-border/60">
               <div className="flex items-center gap-2">
                 <Truck size={18} className="text-brand-accent" />
@@ -1723,9 +1731,9 @@ export default function VendorOrders() {
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-brand-black/60 backdrop-blur-xs animate-in fade-in duration-200"
+          className="fixed inset-0 z-[60] flex items-center justify-center p-3 sm:p-4 bg-brand-black/60 backdrop-blur-xs animate-in fade-in duration-200"
         >
-          <div className="bg-brand-surface border border-rose-200 rounded-2xl w-full max-w-lg p-6 shadow-2xl text-left space-y-5 animate-in zoom-in-95 duration-200">
+          <div className="bg-brand-surface border border-rose-200 rounded-2xl w-full max-w-lg p-4 sm:p-6 shadow-2xl text-left space-y-5 animate-in zoom-in-95 duration-200 max-h-[92vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-brand-border/60">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center">
@@ -1974,9 +1982,9 @@ export default function VendorOrders() {
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
         >
-          <div className="bg-brand-surface border border-brand-border rounded-3xl w-full max-w-lg p-6 sm:p-7 shadow-2xl text-left space-y-5 animate-in zoom-in-95 duration-200">
+          <div className="bg-brand-surface border border-brand-border rounded-3xl w-full max-w-lg p-4 sm:p-7 shadow-2xl text-left space-y-5 animate-in zoom-in-95 duration-200 max-h-[92vh] overflow-y-auto">
             {/* Header */}
             <div className="flex items-center justify-between pb-3 border-b border-brand-border">
               <div className="flex items-center gap-2.5">
@@ -2023,6 +2031,13 @@ export default function VendorOrders() {
 
             {/* Select Delivery Agent */}
             <form onSubmit={handleAssignDeliveryBoy} className="space-y-4">
+              {assignModalError && (
+                <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-2">
+                  <AlertCircle size={14} className="shrink-0 text-rose-600" />
+                  <span>{assignModalError}</span>
+                </div>
+              )}
+
               <div>
                 <label className="block text-xs font-bold text-brand-black mb-2">
                   Select Delivery Agent from Fleet ({deliveryFleet.length} registered)
@@ -2045,14 +2060,15 @@ export default function VendorOrders() {
                 ) : (
                   <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
                     {deliveryFleet.map((boy) => {
-                      const isSelected = selectedDeliveryBoyId === boy._id;
+                      const boyIdStr = boy._id ? boy._id.toString() : '';
+                      const isSelected = selectedDeliveryBoyId && selectedDeliveryBoyId.toString() === boyIdStr;
                       const isAvailable = boy.status === 'available';
                       const isOnDelivery = boy.status === 'on_delivery';
 
                       return (
                         <div
-                          key={boy._id}
-                          onClick={() => setSelectedDeliveryBoyId(boy._id)}
+                          key={boyIdStr}
+                          onClick={() => setSelectedDeliveryBoyId(boyIdStr)}
                           className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
                             isSelected
                               ? 'bg-amber-500/10 border-amber-400 ring-2 ring-amber-400/30 shadow-2xs'
@@ -2097,7 +2113,7 @@ export default function VendorOrders() {
                               type="radio"
                               name="selectedDeliveryBoy"
                               checked={isSelected}
-                              onChange={() => setSelectedDeliveryBoyId(boy._id)}
+                              onChange={() => setSelectedDeliveryBoyId(boyIdStr)}
                               className="text-amber-500 focus:ring-amber-500"
                             />
                           </div>
@@ -2266,8 +2282,20 @@ export default function VendorOrders() {
                 </div>
               </div>
             ) : (
-              <div className="py-12 text-center text-xs text-neutral-400">
-                Failed to lock GPS telemetry. Try refreshing in a moment.
+              <div className="py-16 text-center text-neutral-400 space-y-3">
+                <AlertTriangle size={32} className="text-amber-400 mx-auto" />
+                <p className="text-sm font-semibold text-white">Live GPS Radar Sync</p>
+                <p className="text-xs max-w-sm mx-auto text-neutral-400">
+                  Synchronizing satellite telemetry with assigned courier device. Click below to reconnect.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => handleOpenTrackingModal(trackingModalOrder)}
+                  className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-neutral-950 font-bold text-xs cursor-pointer transition-colors shadow-md inline-flex items-center gap-1.5"
+                >
+                  <RefreshCw size={12} />
+                  <span>Retry Radar Sync</span>
+                </button>
               </div>
             )}
           </div>

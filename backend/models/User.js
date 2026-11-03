@@ -22,8 +22,9 @@ const userSchema = new mongoose.Schema(
     },
     mobile: {
       type: String,
-      required: [true, 'Mobile number is required'],
+      required: false,
       trim: true,
+      default: '',
     },
     password: {
       type: String,
@@ -45,11 +46,38 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    authProvider: {
+      type: String,
+      enum: ['local', 'google', 'apple'],
+      default: 'local',
+      index: true,
+    },
+    googleId: {
+      type: String,
+      sparse: true,
+      index: true,
+    },
+    appleId: {
+      type: String,
+      sparse: true,
+      index: true,
+    },
+    avatar: {
+      type: String,
+      default: '',
+    },
+    isEmailVerified: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,
   }
 );
+
+// Compound index for role filtering and administration lookups
+userSchema.index({ role: 1, status: 1 });
 
 // Hash password with bcryptjs before saving
 userSchema.pre('save', async function () {

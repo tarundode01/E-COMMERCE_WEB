@@ -476,7 +476,8 @@ export default function VendorProducts() {
         onClick={openCreateModal}
         className="text-xs shadow-xs"
       >
-        <span>Add New Creation</span>
+        <span className="hidden sm:inline">Add New Creation</span>
+        <span className="sm:hidden">Add</span>
       </Button>
     </div>
   );
@@ -672,7 +673,7 @@ export default function VendorProducts() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-xs">
+              <table className="w-full min-w-[720px] text-left border-collapse text-xs">
                 <thead>
                   <tr className="bg-brand-offwhite/80 border-b border-brand-border text-[11px] font-bold uppercase tracking-wider text-brand-charcoal">
                     <th className="py-3.5 px-4">Creation</th>
@@ -876,8 +877,8 @@ export default function VendorProducts() {
         {/* ADD / EDIT PRODUCT MODAL */}
         {/* ===================================================================== */}
         {modalMode && (
-          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-            <div className="bg-brand-surface border border-brand-border rounded-2xl max-w-2xl w-full p-6 sm:p-8 shadow-xl text-left my-8 animate-in fade-in">
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+            <div className="bg-brand-surface border border-brand-border rounded-2xl max-w-2xl w-full p-4 sm:p-8 shadow-xl text-left my-auto max-h-[92vh] overflow-y-auto animate-in fade-in">
               <div className="flex items-center justify-between pb-4 border-b border-brand-border mb-6">
                 <div>
                   <h3 className="font-serif text-lg sm:text-xl font-bold text-brand-black">

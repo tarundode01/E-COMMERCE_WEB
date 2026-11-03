@@ -240,11 +240,20 @@ const orderSchema = new mongoose.Schema(
     },
     deliveryStatus: {
       type: String,
-      enum: ['unassigned', 'assigned', 'picked_up', 'out_for_delivery', 'delivered'],
+      enum: ['unassigned', 'assigned', 'accepted', 'picked_up', 'out_for_delivery', 'delivered', 'failed_attempt', 'rescheduled'],
       default: 'unassigned',
       index: true,
     },
     deliveryAssignedAt: {
+      type: Date,
+      default: null,
+    },
+    deliveryFailureReason: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    deliveryFailureAt: {
       type: Date,
       default: null,
     },
@@ -302,9 +311,13 @@ orderSchema.virtual('orderItems').get(function () {
 
 // Database indexes for fast querying and isolation
 orderSchema.index({ customer: 1, createdAt: -1 });
+orderSchema.index({ customer: 1, orderStatus: 1 });
+orderSchema.index({ customer: 1, idempotencyKey: 1 });
 orderSchema.index({ stores: 1, createdAt: -1 });
 orderSchema.index({ 'products.store': 1, createdAt: -1 });
 orderSchema.index({ 'products.vendor': 1, createdAt: -1 });
+orderSchema.index({ deliveryBoy: 1, createdAt: -1 });
+orderSchema.index({ deliveryBoy: 1, deliveryStatus: 1 });
 orderSchema.index({ orderStatus: 1, createdAt: -1 });
 
 // Format JSON response to include virtual id and remove internal fields

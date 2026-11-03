@@ -22,15 +22,15 @@ export default function Button({
 
   const variantStyles = {
     primary:
-      'bg-brand-black text-white hover:bg-brand-charcoal focus:ring-brand-black shadow-sm',
+      'bg-brand-black text-white hover:bg-brand-charcoal dark:bg-brand-accent dark:text-neutral-950 dark:hover:bg-brand-accent-hover focus:ring-brand-accent shadow-sm font-semibold',
     accent:
-      'bg-brand-accent text-white hover:bg-brand-accent-hover focus:ring-brand-accent shadow-sm',
+      'bg-brand-accent text-white dark:text-neutral-950 hover:bg-brand-accent-hover focus:ring-brand-accent shadow-sm font-semibold',
     secondary:
-      'bg-brand-cream text-brand-black hover:bg-brand-border focus:ring-brand-border',
+      'bg-brand-cream text-brand-black dark:bg-[#1E212B] dark:text-[#F8F9FA] hover:bg-brand-border dark:hover:bg-[#282B37] focus:ring-brand-border',
     outline:
-      'border border-brand-charcoal text-brand-charcoal hover:bg-brand-black hover:text-white focus:ring-brand-black',
+      'border border-brand-charcoal dark:border-[#3A3E4D] text-brand-charcoal dark:text-[#E5E7EB] hover:bg-brand-black hover:text-white dark:hover:bg-brand-accent dark:hover:text-neutral-950 dark:hover:border-brand-accent focus:ring-brand-accent',
     ghost:
-      'text-brand-charcoal hover:bg-brand-cream/60 focus:ring-brand-border',
+      'text-brand-charcoal dark:text-[#E5E7EB] hover:bg-brand-cream/60 dark:hover:bg-[#1E212B] focus:ring-brand-border',
   };
 
   const sizeStyles = {

@@ -16,12 +16,15 @@ import {
   LogOut,
   Sparkles,
   ShieldCheck,
-  CheckCircle2
+  CheckCircle2,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import Badge from './Badge';
 import Button from './Button';
 import { productService, categoryService, orderService, adminVendorService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 
 /**
  * Reusable Admin Layout Component
@@ -46,6 +49,7 @@ export default function AdminLayout({
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
 
   // Close mobile sidebar on Escape key
   useEffect(() => {
@@ -393,10 +397,7 @@ export default function AdminLayout({
                   {title}
                 </h1>
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-semibold bg-emerald-500/10 text-emerald-800 border border-emerald-500/25 shadow-2xs backdrop-blur-xs shrink-0">
-                  <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                  </span>
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
                   <span className="hidden xs:inline">Live Engine</span>
                 </span>
               </div>
@@ -413,7 +414,7 @@ export default function AdminLayout({
           {/* Center Enterprise Telemetry Capsule (Large Desktop Screens) */}
           <div className="hidden xl:flex items-center gap-3 px-4 py-1.5 rounded-full bg-gradient-to-r from-brand-offwhite via-white to-brand-offwhite border border-brand-border/90 shadow-2xs text-xs">
             <div className="flex items-center gap-1.5 text-emerald-700 font-semibold text-[11px]">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
               <span>Atlas Cluster</span>
             </div>
             <span className="w-px h-3.5 bg-brand-border" />
@@ -432,6 +433,21 @@ export default function AdminLayout({
           <div className="flex items-center gap-2.5 sm:gap-3.5 shrink-0">
             {actions}
 
+            {/* Dark Mode Toggle Button */}
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="p-2.5 text-brand-charcoal hover:text-brand-black bg-brand-offwhite/90 hover:bg-brand-cream/70 border border-brand-border/90 hover:border-brand-accent/50 rounded-xl transition-all cursor-pointer shadow-2xs focus:outline-none group active:scale-95"
+              aria-label={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            >
+              {isDark ? (
+                <Sun size={18} className="text-amber-400 group-hover:rotate-45 transition-transform duration-300 drop-shadow-[0_0_8px_rgba(251,191,36,0.6)]" />
+              ) : (
+                <Moon size={18} className="text-brand-charcoal group-hover:-rotate-12 transition-transform duration-300" />
+              )}
+            </button>
+
             {/* Notification Bell with Luxury Dropdown */}
             <div className="relative">
               <button
@@ -443,7 +459,7 @@ export default function AdminLayout({
               >
                 <Bell size={18} className="transition-transform group-hover:rotate-12 duration-200" />
                 {((counts.pendingOrders || 0) + (counts.pendingVendors || 0)) > 0 ? (
-                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-amber-500 text-white text-[9.5px] font-bold flex items-center justify-center ring-2 ring-white animate-pulse shadow-xs">
+                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-amber-500 text-white text-[9.5px] font-bold flex items-center justify-center ring-2 ring-white shadow-xs">
                     {(counts.pendingOrders || 0) + (counts.pendingVendors || 0)}
                   </span>
                 ) : (
@@ -461,7 +477,7 @@ export default function AdminLayout({
                     {/* Dropdown Header */}
                     <div className="flex items-center justify-between pb-3">
                       <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                        <div className="w-2 h-2 rounded-full bg-emerald-500" />
                         <h4 className="text-xs font-bold text-brand-black uppercase tracking-wider">
                           Live System Radar
                         </h4>

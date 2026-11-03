@@ -373,7 +373,17 @@ export default function VendorSettings() {
             onClick={handleSave}
             className="text-xs"
           >
-            <span>{isRejected ? 'Resubmit Application' : 'Save Changes'}</span>
+            {isRejected ? (
+              <>
+                <span className="hidden sm:inline">Resubmit Application</span>
+                <span className="sm:hidden">Resubmit</span>
+              </>
+            ) : (
+              <>
+                <span className="hidden sm:inline">Save Changes</span>
+                <span className="sm:hidden">Save</span>
+              </>
+            )}
           </Button>
           <button
             type="button"
@@ -440,7 +450,7 @@ export default function VendorSettings() {
       )}
 
       {/* SUB-TABS: Profile | Hours & Logistics */}
-      <div className="flex items-center gap-2 border-b border-brand-border pb-1 overflow-x-auto text-left">
+      <div className="flex items-center gap-2 border-b border-brand-border pb-1 overflow-x-auto text-left [scrollbar-width:none]">
         <button
           type="button"
           onClick={() => setActiveTab('profile')}

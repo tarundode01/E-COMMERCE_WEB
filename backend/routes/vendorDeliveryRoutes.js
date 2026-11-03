@@ -13,6 +13,12 @@ import {
   getUnassignedStoreOrders,
   getDeliveryBoyAssignedOrders,
   acceptAssignedOrder,
+  pickupAssignedOrder,
+  startTransitOrder,
+  attemptFailedDelivery,
+  resendDeliveryOtp,
+  remitDeliveryCash,
+  updateMyDeliveryProfile,
   rejectAssignedOrder,
   updateMyDeliveryStatus,
   updateMyDeliveryLocation,
@@ -41,6 +47,27 @@ router.get('/my-orders', protect, vendorOrDeliveryBoy, getDeliveryBoyAssignedOrd
 // @route   POST /api/vendor/delivery-boys/accept-order
 router.post('/accept-order', protect, vendorOrDeliveryBoy, acceptAssignedOrder);
 
+// @route   POST /api/vendor/delivery-boys/pickup-order
+router.post('/pickup-order', protect, vendorOrDeliveryBoy, pickupAssignedOrder);
+
+// @route   POST /api/vendor/delivery-boys/start-transit
+router.post('/start-transit', protect, vendorOrDeliveryBoy, startTransitOrder);
+
+// @route   POST /api/vendor/delivery-boys/failed-delivery
+router.post('/failed-delivery', protect, vendorOrDeliveryBoy, attemptFailedDelivery);
+
+// @route   POST /api/vendor/delivery-boys/resend-otp
+router.post('/resend-otp', protect, vendorOrDeliveryBoy, resendDeliveryOtp);
+
+// @route   POST /api/vendor/delivery-boys/complete-order (accessible by vendor and delivery boy)
+router.post('/complete-order', protect, vendorOrDeliveryBoy, completeOrderDelivery);
+
+// @route   POST /api/vendor/delivery-boys/remit-cash
+router.post('/remit-cash', protect, vendorOrDeliveryBoy, remitDeliveryCash);
+
+// @route   PATCH /api/vendor/delivery-boys/my-profile
+router.patch('/my-profile', protect, vendorOrDeliveryBoy, updateMyDeliveryProfile);
+
 // @route   POST /api/vendor/delivery-boys/reject-order
 router.post('/reject-order', protect, vendorOrDeliveryBoy, rejectAssignedOrder);
 
@@ -50,11 +77,11 @@ router.patch('/my-status', protect, vendorOrDeliveryBoy, updateMyDeliveryStatus)
 // @route   PATCH /api/vendor/delivery-boys/my-location
 router.patch('/my-location', protect, vendorOrDeliveryBoy, updateMyDeliveryLocation);
 
+// @route   POST /api/vendor/delivery-boys/simulate-live
+router.post('/simulate-live', protect, vendorOrDeliveryBoy, simulateLiveTelemetry);
+
 // @route   PATCH /api/vendor/delivery-boys/:id/location (accessible by vendor and delivery boy)
 router.patch('/:id/location', protect, vendorOrDeliveryBoy, updateDeliveryBoyLocation);
-
-// @route   POST /api/vendor/delivery-boys/complete-order (accessible by vendor and delivery boy)
-router.post('/complete-order', protect, vendorOrDeliveryBoy, completeOrderDelivery);
 
 // ============================================================================
 // VENDOR FLEET MANAGEMENT (Strictly Approved Vendor only)

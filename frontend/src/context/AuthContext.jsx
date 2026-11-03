@@ -145,6 +145,38 @@ export function AuthProvider({ children }) {
   };
 
   /**
+   * Authenticate or register user via Google / Apple Social OAuth
+   * POST /api/auth/social-login
+   */
+  const socialLogin = async ({ provider, email, name, avatar, providerId, role = 'user' }) => {
+    const response = await authService.socialLogin({
+      provider,
+      email,
+      name,
+      avatar,
+      providerId,
+      role,
+    });
+
+    if (response && response.token && response.user) {
+      setToken(response.token);
+      setUser(response.user);
+      if (response.store) {
+        setStore(response.store);
+      }
+      return {
+        success: true,
+        data: response,
+        user: response.user,
+        store: response.store || null,
+        isNewUser: response.isNewUser || false,
+      };
+    }
+
+    throw new Error(response?.message || 'Social login failed. Please try again.');
+  };
+
+  /**
    * Register user (Customer, Vendor, or Platform Admin) via backend API
    * POST /api/auth/register
    */
@@ -226,6 +258,7 @@ export function AuthProvider({ children }) {
     isLoading,
     isAuthenticated: Boolean(token && user),
     login,
+    socialLogin,
     register,
     registerVendor,
     updateUser,

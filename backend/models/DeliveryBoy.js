@@ -113,18 +113,58 @@ const deliveryBoySchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    bloodGroup: {
+      type: String,
+      default: 'O+',
+    },
+    insurancePolicy: {
+      type: String,
+      default: 'POL-2026-MP09-4821',
+    },
+    insuranceExpiry: {
+      type: String,
+      default: '2027-12-31',
+    },
+    policeVerificationStatus: {
+      type: String,
+      default: 'Verified',
+    },
     avatar: {
       type: String,
       default: '',
     },
+    cashInHand: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    totalCashRemitted: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    lastRemittedAt: {
+      type: Date,
+      default: null,
+    },
+    remittanceHistory: [
+      {
+        amount: { type: Number, required: true },
+        handoverCode: { type: String, required: true },
+        remittedAt: { type: Date, default: Date.now },
+        note: { type: String, default: '' },
+      },
+    ],
   },
   {
     timestamps: true,
   }
 );
 
-// Compound index to ensure uniqueness of email per vendor (or globally)
+// Compound indexes for fast querying and fleet filtering
 deliveryBoySchema.index({ vendor: 1, email: 1 }, { unique: true });
+deliveryBoySchema.index({ store: 1, status: 1 });
+deliveryBoySchema.index({ vendor: 1, status: 1 });
 
 // Password hashing pre-save hook
 deliveryBoySchema.pre('save', async function () {

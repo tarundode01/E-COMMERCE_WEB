@@ -55,6 +55,20 @@ export const authService = {
     return response.data;
   },
 
+  // POST /api/auth/social-login (Google & Apple OAuth)
+  socialLogin: async (socialData) => {
+    const response = await api.post('/api/auth/social-login', socialData);
+    return response.data;
+  },
+
+  // GET /api/auth/discovered-accounts
+  getDiscoveredAccounts: async (provider) => {
+    const response = await api.get('/api/auth/discovered-accounts', {
+      params: provider ? { provider } : {},
+    });
+    return response.data;
+  },
+
   // GET /api/auth/profile (Ready for backend integration)
   getProfile: async () => {
     const response = await api.get('/api/auth/profile');
@@ -655,16 +669,58 @@ export const vendorDeliveryService = {
     const response = await api.patch('/api/vendor/delivery-boys/my-location', locationPayload);
     return response.data;
   },
+
+  // POST /api/vendor/delivery-boys/pickup-order
+  pickupAssignedOrder: async (orderId) => {
+    const response = await api.post('/api/vendor/delivery-boys/pickup-order', { orderId });
+    return response.data;
+  },
+
+  // POST /api/vendor/delivery-boys/start-transit
+  startTransitOrder: async (orderId) => {
+    const response = await api.post('/api/vendor/delivery-boys/start-transit', { orderId });
+    return response.data;
+  },
+
+  // POST /api/vendor/delivery-boys/failed-delivery
+  attemptFailedDelivery: async (orderId, reason = '') => {
+    const response = await api.post('/api/vendor/delivery-boys/failed-delivery', { orderId, reason });
+    return response.data;
+  },
+
+  // POST /api/vendor/delivery-boys/resend-otp
+  resendDeliveryOtp: async (orderId) => {
+    const response = await api.post('/api/vendor/delivery-boys/resend-otp', { orderId });
+    return response.data;
+  },
+
+  // POST /api/vendor/delivery-boys/remit-cash
+  remitDeliveryCash: async (amount = 0, note = '') => {
+    const response = await api.post('/api/vendor/delivery-boys/remit-cash', { amount, note });
+    return response.data;
+  },
+
+  // PATCH /api/vendor/delivery-boys/my-profile
+  updateMyDeliveryProfile: async (profileData) => {
+    const response = await api.patch('/api/vendor/delivery-boys/my-profile', profileData);
+    return response.data;
+  },
 };
 
 // Aliased deliveryBoyService for dedicated delivery portal
 export const deliveryBoyService = {
   getMyOrders: vendorDeliveryService.getMyAssignedOrders,
   acceptOrder: vendorDeliveryService.acceptAssignedOrder,
-  rejectOrder: vendorDeliveryService.rejectAssignedOrder,
+  pickupOrder: vendorDeliveryService.pickupAssignedOrder,
+  startTransit: vendorDeliveryService.startTransitOrder,
+  reportFailedDelivery: vendorDeliveryService.attemptFailedDelivery,
+  resendOtp: vendorDeliveryService.resendDeliveryOtp,
   completeOrder: vendorDeliveryService.completeOrderDelivery,
+  remitCash: vendorDeliveryService.remitDeliveryCash,
+  updateProfile: vendorDeliveryService.updateMyDeliveryProfile,
   updateLocation: vendorDeliveryService.updateMyLocation,
   updateStatus: vendorDeliveryService.updateMyStatus,
+  rejectOrder: vendorDeliveryService.rejectAssignedOrder,
 };
 
 export default api;

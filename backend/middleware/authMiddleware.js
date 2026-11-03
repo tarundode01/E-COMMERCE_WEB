@@ -44,24 +44,7 @@ export const protect = async (req, res, next) => {
       }
     }
 
-    // Graceful fallback for dev environment if token was signed with a previous session secret
     if (!decoded) {
-      try {
-        const unverified = jwt.decode(token);
-        if (unverified && unverified.id) {
-          const candidateUser = await User.findById(unverified.id).select('-password');
-          if (candidateUser) {
-            console.warn(`JWT signature fallback matched active user: ${candidateUser.email}`);
-            decoded = unverified;
-          }
-        }
-      } catch (decodeErr) {
-        // Ignore decode error and throw lastError below
-      }
-    }
-
-    if (!decoded) {
-      console.error('JWT Verification Error:', lastError?.message || 'Invalid token');
       return res.status(401).json({
         success: false,
         message: 'Invalid or expired authorization token.',

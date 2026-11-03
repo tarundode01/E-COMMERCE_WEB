@@ -10,7 +10,9 @@ import {
   LogOut,
   ChevronDown,
   ArrowRight,
-  PackageCheck
+  PackageCheck,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import Container from './Container';
 import Badge from './Badge';
@@ -19,6 +21,7 @@ import Button from './Button';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { categoryService } from '../services/api';
 
 /**
@@ -57,6 +60,7 @@ export default function Navbar({ cartCount: propCartCount }) {
   const { cartCount: contextCartCount } = useCart();
   const { wishlistCount } = useWishlist();
   const { user, isAuthenticated, logout } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
   const cartCount = propCartCount !== undefined ? propCartCount : contextCartCount;
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -217,10 +221,10 @@ export default function Navbar({ cartCount: propCartCount }) {
             {isAuthenticated && user?.role === 'vendor' ? (
               <SafeLink
                 to="/vendor/dashboard"
-                className="text-xs uppercase tracking-widest font-bold text-emerald-800 hover:text-emerald-950 transition-colors py-2 relative group"
+                className="text-xs uppercase tracking-widest font-bold text-emerald-800 dark:text-emerald-400 hover:text-emerald-950 dark:hover:text-emerald-300 transition-colors py-2 relative group"
               >
                 <span>Vendor Portal</span>
-                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-emerald-600 transition-all duration-300 group-hover:w-full"></span>
+                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-emerald-600 dark:bg-emerald-400 transition-all duration-300 group-hover:w-full"></span>
               </SafeLink>
             ) : (
               <SafeLink
@@ -244,6 +248,21 @@ export default function Navbar({ cartCount: propCartCount }) {
               title="Search"
             >
               <Search size={20} />
+            </button>
+
+            {/* Dark Mode Toggle */}
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="p-2 text-brand-charcoal hover:text-brand-accent hover:bg-brand-cream/50 rounded-full transition-all duration-300 focus:outline-none cursor-pointer relative group"
+              aria-label={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            >
+              {isDark ? (
+                <Sun size={20} className="text-amber-400 group-hover:rotate-45 transition-transform duration-300 drop-shadow-[0_0_8px_rgba(251,191,36,0.5)]" />
+              ) : (
+                <Moon size={20} className="text-brand-charcoal group-hover:-rotate-12 transition-transform duration-300" />
+              )}
             </button>
 
             {/* Wishlist Icon */}
@@ -294,7 +313,7 @@ export default function Navbar({ cartCount: propCartCount }) {
                 {user.role === 'admin' && (
                   <SafeLink
                     to="/admin/orders"
-                    className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/15 border border-amber-500/40 hover:bg-amber-500/25 text-[11px] font-bold text-amber-800 transition-colors"
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/15 border border-amber-500/40 hover:bg-amber-500/25 text-[11px] font-bold text-amber-800 dark:text-amber-300 transition-colors"
                     title="Open Admin Orders Ledger"
                   >
                     <span>Admin Panel</span>
@@ -303,7 +322,7 @@ export default function Navbar({ cartCount: propCartCount }) {
                 {user.role === 'vendor' && (
                   <SafeLink
                     to="/vendor/dashboard"
-                    className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/40 hover:bg-emerald-500/25 text-[11px] font-bold text-emerald-800 transition-colors"
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/40 hover:bg-emerald-500/25 text-[11px] font-bold text-emerald-800 dark:text-emerald-300 transition-colors"
                     title="Open Merchant Portal"
                   >
                     <span>Vendor Portal</span>
@@ -312,7 +331,7 @@ export default function Navbar({ cartCount: propCartCount }) {
                 {user.role === 'delivery_boy' && (
                   <SafeLink
                     to="/delivery/dashboard"
-                    className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/15 border border-amber-500/40 hover:bg-amber-500/25 text-[11px] font-bold text-amber-800 transition-colors"
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/15 border border-amber-500/40 hover:bg-amber-500/25 text-[11px] font-bold text-amber-800 dark:text-amber-300 transition-colors"
                     title="Open Delivery Dispatch Portal"
                   >
                     <span>Rider Portal</span>
@@ -331,7 +350,7 @@ export default function Navbar({ cartCount: propCartCount }) {
                   className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-brand-cream/70 hover:bg-brand-cream text-xs font-semibold text-brand-black transition-colors"
                   title={`Logged in as ${user.name} • ${user.role === 'admin' ? 'Admin Orders' : user.role === 'vendor' ? 'Vendor Portal' : user.role === 'delivery_boy' ? 'Rider Portal' : 'View Profile'}`}
                 >
-                  <span className="w-5 h-5 rounded-full bg-brand-black text-white text-[10px] flex items-center justify-center font-bold">
+                  <span className="w-5 h-5 rounded-full bg-brand-black text-white dark:bg-brand-accent dark:text-neutral-950 text-[10px] flex items-center justify-center font-bold">
                     {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
                   </span>
                   <span className="max-w-[80px] truncate">{user.name.split(' ')[0]}</span>
@@ -471,8 +490,28 @@ export default function Navbar({ cartCount: propCartCount }) {
               )}
             </div>
 
-            {/* Mobile Actions: Wishlist & Account */}
+            {/* Mobile Actions: Dark Mode, Wishlist & Account */}
             <div className="pt-2 flex flex-col space-y-3">
+              {/* Mobile Dark Mode Switcher */}
+              <div className="flex items-center justify-between py-2 border-b border-brand-border/40">
+                <div className="flex items-center gap-3 text-sm font-medium text-brand-charcoal">
+                  {isDark ? <Sun size={18} className="text-amber-400" /> : <Moon size={18} />}
+                  <span>{isDark ? 'Dark Mode (Active)' : 'Light Mode'}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={toggleTheme}
+                  className="w-12 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-300 bg-brand-cream border border-brand-border"
+                  aria-label="Toggle dark mode"
+                >
+                  <div
+                    className={`bg-brand-accent w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ${
+                      isDark ? 'translate-x-6' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
+
               <SafeLink
                 to="/wishlist"
                 onClick={() => setIsMobileMenuOpen(false)}
@@ -509,7 +548,7 @@ export default function Navbar({ cartCount: propCartCount }) {
                 <SafeLink
                   to="/admin/orders"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-amber-800 bg-amber-500/10 border border-amber-500/30 px-3 py-2 rounded-lg"
+                  className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-amber-800 dark:text-amber-300 bg-amber-500/10 dark:bg-amber-500/20 border border-amber-500/30 px-3 py-2 rounded-lg"
                 >
                   <span>Admin Orders Ledger</span>
                   <Badge variant="accent" size="sm">Admin</Badge>
@@ -520,7 +559,7 @@ export default function Navbar({ cartCount: propCartCount }) {
                 <SafeLink
                   to="/vendor/dashboard"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-emerald-800 bg-emerald-500/10 border border-emerald-500/30 px-3 py-2 rounded-lg"
+                  className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300 bg-emerald-500/10 dark:bg-emerald-500/20 border border-emerald-500/30 px-3 py-2 rounded-lg"
                 >
                   <span>Merchant Portal</span>
                   <Badge variant="accent" size="sm">Vendor</Badge>
@@ -546,7 +585,7 @@ export default function Navbar({ cartCount: propCartCount }) {
                     className="flex items-center gap-2.5 hover:text-brand-accent transition-colors"
                     title={user.role === 'admin' ? 'View Admin Orders' : 'View Account Profile'}
                   >
-                    <span className="w-7 h-7 rounded-full bg-brand-black text-white text-xs flex items-center justify-center font-bold">
+                    <span className="w-7 h-7 rounded-full bg-brand-black text-white dark:bg-brand-accent dark:text-neutral-950 text-xs flex items-center justify-center font-bold">
                       {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
                     </span>
                     <div>
@@ -560,7 +599,7 @@ export default function Navbar({ cartCount: propCartCount }) {
                       logout();
                       setIsMobileMenuOpen(false);
                     }}
-                    className="text-xs text-rose-600 hover:text-rose-700 font-semibold cursor-pointer"
+                    className="text-xs text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 font-semibold cursor-pointer"
                   >
                     Sign Out
                   </button>

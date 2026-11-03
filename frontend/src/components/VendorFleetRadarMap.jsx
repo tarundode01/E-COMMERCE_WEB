@@ -744,16 +744,16 @@ export default function VendorFleetRadarMap({
       {/* ========================================================================= */}
       {/* 8. FLOATING TOP COMMAND HUD BAR */}
       {/* ========================================================================= */}
-      <div className="absolute top-3 left-3 right-3 z-30 flex flex-wrap items-center justify-between gap-2 pointer-events-none">
+      <div className="absolute top-2.5 sm:top-3 inset-x-2 sm:inset-x-3 z-30 flex items-center justify-between gap-1.5 sm:gap-2 pointer-events-none">
         {/* Left: Store Dispatch Command Center Banner */}
-        <div className="pointer-events-auto flex items-center gap-2.5 px-4 py-2 rounded-2xl bg-neutral-950/90 backdrop-blur-md border border-neutral-800 shadow-2xl text-xs font-semibold">
-          <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping" />
-          <span className="font-serif font-bold text-white tracking-wide">
-            Fleet Dispatch Radar
+        <div className="pointer-events-auto flex items-center gap-1.5 sm:gap-2.5 px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-2xl bg-neutral-950/90 backdrop-blur-md border border-neutral-800 shadow-2xl text-xs font-semibold">
+          <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-cyan-400 animate-ping shrink-0" />
+          <span className="font-serif font-bold text-white tracking-wide hidden xs:inline">
+            Fleet Radar
           </span>
-          <span className="text-neutral-500 text-[10px]">•</span>
-          <span className="text-[10px] font-mono text-cyan-300 bg-cyan-950/90 px-2 py-0.5 rounded-md border border-cyan-500/40 font-bold">
-            {deliveryBoys.length} ACTIVE COURIERS
+          <span className="text-neutral-500 text-[10px] hidden xs:inline">•</span>
+          <span className="text-[10px] font-mono text-cyan-300 bg-cyan-950/90 px-1.5 sm:px-2 py-0.5 rounded-md border border-cyan-500/40 font-bold whitespace-nowrap">
+            {deliveryBoys.length} <span className="hidden sm:inline">ACTIVE COURIERS</span><span className="sm:hidden">Active</span>
           </span>
           <span className="hidden md:inline-flex items-center gap-1 text-[10px] text-emerald-400 font-mono">
             <Radio size={10} className="animate-pulse" />
@@ -762,19 +762,19 @@ export default function VendorFleetRadarMap({
         </div>
 
         {/* Right: Quick Action Controls */}
-        <div className="pointer-events-auto flex items-center gap-2">
+        <div className="pointer-events-auto flex items-center gap-1 sm:gap-2">
           {/* Live Simulation Movement Pulse */}
           {onSimulateMovement && (
             <button
               type="button"
               onClick={onSimulateMovement}
               disabled={simulating}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-amber-500 hover:bg-amber-400 text-neutral-950 font-bold text-xs shadow-xl shadow-amber-500/25 transition-all cursor-pointer disabled:opacity-50"
+              className="inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-2xl bg-amber-500 hover:bg-amber-400 text-neutral-950 font-bold text-xs shadow-xl shadow-amber-500/25 transition-all cursor-pointer disabled:opacity-50"
               title="Simulate realistic movement pulse step across all couriers"
             >
               <RefreshCw size={12} className={simulating ? 'animate-spin' : ''} />
               <span className="hidden sm:inline">Simulate Fleet Movement</span>
-              <span className="sm:hidden">Move</span>
+              <span className="sm:hidden">Pulse</span>
             </button>
           )}
 
@@ -783,7 +783,7 @@ export default function VendorFleetRadarMap({
             <button
               type="button"
               onClick={onToggleAutoRadar}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-2xl text-xs font-semibold border backdrop-blur-md transition-all cursor-pointer shadow-xl ${
+              className={`inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-2xl text-xs font-semibold border backdrop-blur-md transition-all cursor-pointer shadow-xl ${
                 autoRadar
                   ? 'bg-emerald-950/80 text-emerald-300 border-emerald-500/40'
                   : 'bg-neutral-950/90 text-neutral-400 border-neutral-800'
@@ -801,7 +801,7 @@ export default function VendorFleetRadarMap({
       {/* 9. SELECTED AGENT LIVE DOSSIER POPOVER (RIGHT SLIDE-OVER) */}
       {/* ========================================================================= */}
       {selectedAgent && activeAgentPoint && (
-        <div className="interactive-dossier absolute top-16 right-3 z-40 w-72 sm:w-88 max-h-[80%] overflow-y-auto bg-neutral-950/95 backdrop-blur-2xl border border-cyan-500/40 rounded-3xl p-4 shadow-2xl text-left animate-in fade-in slide-in-from-right-4 duration-200 space-y-3.5">
+        <div className="interactive-dossier absolute inset-x-2 sm:inset-x-auto sm:right-3 top-14 sm:top-16 sm:w-88 max-h-[75%] sm:max-h-[80%] overflow-y-auto bg-neutral-950/95 backdrop-blur-2xl border border-cyan-500/40 rounded-3xl p-3.5 sm:p-4 shadow-2xl text-left animate-in fade-in slide-in-from-right-4 duration-200 space-y-3 sm:space-y-3.5 z-40">
           {/* Header */}
           <div className="flex items-start justify-between pb-3 border-b border-neutral-800">
             <div className="flex items-center gap-3">
@@ -998,9 +998,9 @@ export default function VendorFleetRadarMap({
       {/* ========================================================================= */}
       {/* 10. BOTTOM QUICK-FLEET DOCK TABS & CAROUSEL */}
       {/* ========================================================================= */}
-      <div className="absolute bottom-3 left-3 right-3 sm:left-auto sm:right-auto sm:left-1/2 sm:-translate-x-1/2 z-30 flex flex-col items-center gap-1.5 pointer-events-auto">
+      <div className="absolute bottom-2.5 sm:bottom-3 inset-x-2 sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 z-20 flex flex-col items-center gap-1.5 pointer-events-auto max-w-full">
         {/* Filter Pills */}
-        <div className="flex items-center gap-1 p-1 rounded-2xl bg-neutral-950/95 backdrop-blur-md border border-neutral-800 shadow-2xl">
+        <div className="flex items-center justify-center gap-1 p-1 rounded-2xl bg-neutral-950/95 backdrop-blur-md border border-neutral-800 shadow-2xl max-w-full overflow-x-auto [scrollbar-width:none]">
           <button
             type="button"
             onClick={() => {
@@ -1083,11 +1083,11 @@ export default function VendorFleetRadarMap({
       </div>
 
       {/* ========================================================================= */}
-      {/* 11. INTERACTIVE MAP CONTROLS & THEME TOGGLE (BOTTOM RIGHT) */}
+      {/* 11. INTERACTIVE MAP CONTROLS & THEME TOGGLE */}
       {/* ========================================================================= */}
-      <div className="absolute bottom-3 right-3 z-30 flex flex-col items-end gap-2 pointer-events-auto">
+      <div className="absolute top-12 sm:top-auto sm:bottom-3 right-2 sm:right-3 z-20 flex flex-col items-end gap-1.5 sm:gap-2 pointer-events-auto">
         {/* Map Theme Toggle */}
-        <div className="flex items-center gap-1 p-1 rounded-xl bg-neutral-950/90 backdrop-blur-md border border-neutral-800 text-[10px] font-bold shadow-2xl">
+        <div className="flex items-center gap-0.5 sm:gap-1 p-0.5 sm:p-1 rounded-xl bg-neutral-950/90 backdrop-blur-md border border-neutral-800 text-[9px] sm:text-[10px] font-bold shadow-2xl">
           {[
             { id: 'cyber', label: 'Cyber' },
             { id: 'streets', label: 'Streets' },
