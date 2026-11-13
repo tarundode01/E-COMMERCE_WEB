@@ -138,8 +138,14 @@ export default function ProductCard({
           <img
             src={resolvedImage}
             alt={name}
-            className="w-full h-full object-cover object-center transform transition-transform duration-700 ease-out group-hover:scale-105"
+            className="w-full h-full object-cover object-center transform transition-transform duration-700 ease-out group-hover:scale-108"
             loading="lazy"
+            onError={(e) => {
+              const fallback = resolveCardImage('', category, name);
+              if (e.currentTarget.src !== fallback) {
+                e.currentTarget.src = fallback;
+              }
+            }}
           />
         </SafeLink>
 

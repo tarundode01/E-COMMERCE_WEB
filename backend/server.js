@@ -1,4 +1,5 @@
 import path from 'path';
+import { fileURLToPath } from 'url';
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -120,8 +121,16 @@ app.use(cors());
 app.use(express.json());
 
 // Serve secure backend uploads (isolated from frontend source directory)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const uploadsDir = path.join(__dirname, 'uploads');
+
+app.use('/api/uploads', express.static(uploadsDir));
+app.use('/uploads', express.static(uploadsDir));
 app.use('/api/uploads', express.static(path.resolve('uploads')));
 app.use('/uploads', express.static(path.resolve('uploads')));
+app.use('/api/uploads', express.static(path.resolve('backend/uploads')));
+app.use('/uploads', express.static(path.resolve('backend/uploads')));
 
 // Health Check Endpoint
 app.get('/api/health', (req, res) => {

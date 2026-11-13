@@ -35,6 +35,7 @@ import { useWishlist } from '../context/WishlistContext';
 import { useAuth } from '../context/AuthContext';
 import { reviewService, productService } from '../services/api';
 import { formatImageUrl } from '../utils/imageUrl';
+import defaultWatchImg from '../assets/luxury_watch.jpg';
 
 /**
  * Inner component keyed by product.id to automatically reset state on navigation
@@ -369,6 +370,11 @@ function ProductDetailsContent({ product, onAddToCart, onToggleWishlist }) {
                 src={galleryImages[activeImageIndex] || product.image}
                 alt={product.name}
                 className="w-full h-full object-cover object-center transform transition-transform duration-700 ease-out group-hover:scale-105"
+                onError={(e) => {
+                  if (e.currentTarget.src !== defaultWatchImg) {
+                    e.currentTarget.src = defaultWatchImg;
+                  }
+                }}
               />
 
               {/* Badges on main image */}
