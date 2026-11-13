@@ -31,6 +31,7 @@ import AdminLayout from '../components/AdminLayout';
 import Button from '../components/Button';
 import Badge from '../components/Badge';
 import Input from '../components/Input';
+import { TableSkeleton } from '../components/ShimmerLoader';
 import { adminVendorService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { formatImageUrl } from '../utils/imageUrl';
@@ -400,11 +401,14 @@ export default function AdminVendors() {
         {/* ========================================================================= */}
         <div className="bg-brand-surface border border-brand-border/80 rounded-2xl shadow-xs overflow-hidden">
           {isLoading ? (
-            <div className="p-14 text-center space-y-3">
-              <RefreshCw size={28} className="animate-spin text-amber-500 mx-auto" />
-              <p className="text-xs font-semibold text-brand-muted uppercase tracking-wider">
-                Accessing Merchant Registry...
-              </p>
+            <div className="p-6 space-y-4 animate-fade-in-up">
+              <div className="flex items-center gap-3 p-3 bg-brand-cream/40 rounded-xl">
+                <RefreshCw size={18} className="animate-spin text-amber-500" />
+                <span className="text-xs font-semibold text-brand-charcoal uppercase tracking-wider">
+                  Accessing Merchant Registry & Ledger...
+                </span>
+              </div>
+              <TableSkeleton rows={5} cols={5} />
             </div>
           ) : applications.length === 0 ? (
             <div className="p-14 text-center space-y-2">

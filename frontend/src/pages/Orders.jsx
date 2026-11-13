@@ -37,6 +37,7 @@ import Badge from '../components/Badge';
 import LiveDeliveryMap from '../components/LiveDeliveryMap';
 import { useAuth } from '../context/AuthContext';
 import { orderService } from '../services/api';
+import { OrderCardSkeleton } from '../components/ShimmerLoader';
 
 /**
  * Status Badge Component with Luxury Theme Styles
@@ -565,16 +566,19 @@ export default function Orders() {
           </div>
         )}
 
-        {/* Loading State or Orders Content */}
+        {/* Loading Shimmer Skeleton State */}
         {isLoading ? (
-          <div className="bg-brand-surface border border-brand-border/60 rounded-2xl p-12 sm:p-16 text-center max-w-xl mx-auto shadow-xs my-8 animate-in fade-in duration-200">
-            <Loader2 size={36} className="text-brand-accent animate-spin mx-auto mb-4" />
-            <h3 className="font-serif text-lg sm:text-xl font-bold text-brand-black mb-1">
-              Accessing Order Dossier...
-            </h3>
-            <p className="text-xs text-brand-muted max-w-sm mx-auto">
-              Connecting to secure fulfillment catalog and retrieving your verified acquisitions.
-            </p>
+          <div className="space-y-6 my-4 animate-fade-in-up">
+            <div className="bg-brand-surface border border-brand-border/60 rounded-2xl p-4 sm:p-5 flex items-center justify-between shadow-xs max-w-4xl mx-auto">
+              <div className="flex items-center gap-3">
+                <Loader2 size={18} className="text-brand-accent animate-spin" />
+                <span className="text-xs font-semibold text-brand-charcoal uppercase tracking-wider">
+                  Accessing Order Dossier & Tracking Milestones...
+                </span>
+              </div>
+              <span className="text-[11px] text-brand-muted hidden sm:inline">Encrypted member connection</span>
+            </div>
+            <OrderCardSkeleton count={3} />
           </div>
         ) : orders.length === 0 ? (
           /* Clean Empty Orders State (No fake sample orders) */

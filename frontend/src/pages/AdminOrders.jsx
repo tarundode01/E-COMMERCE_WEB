@@ -33,6 +33,7 @@ import AdminLayout from '../components/AdminLayout';
 import Button from '../components/Button';
 import Input from '../components/Input';
 import Badge from '../components/Badge';
+import { TableSkeleton } from '../components/ShimmerLoader';
 import { orderService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { formatImageUrl } from '../utils/imageUrl';
@@ -799,17 +800,17 @@ export default function AdminOrders() {
           </div>
 
           {/* ========================================================================= */}
-          {/* 4. RESPONSIVE ORDERS TABLE */}
+          {/* 4. RESPONSIVE ORDERS TABLE (With Shimmer Skeleton) */}
           {/* ========================================================================= */}
           {isLoading ? (
-            <div className="bg-brand-surface border border-brand-border/70 rounded-2xl p-16 text-center my-6 shadow-xs animate-in fade-in duration-200">
-              <Loader2 size={36} className="text-brand-accent animate-spin mx-auto mb-4" />
-              <h3 className="font-serif text-lg font-bold text-brand-black mb-1">
-                Accessing Executive Order Registry...
-              </h3>
-              <p className="text-xs text-brand-muted max-w-sm mx-auto">
-                Retrieving real-time verified customer acquisitions from MongoDB via admin endpoint.
-              </p>
+            <div className="my-6 space-y-4 animate-fade-in-up">
+              <div className="flex items-center gap-3 p-4 bg-brand-surface rounded-xl border border-brand-border/60">
+                <Loader2 size={16} className="text-brand-accent animate-spin" />
+                <span className="text-xs font-semibold text-brand-charcoal uppercase tracking-wider">
+                  Accessing Executive Order Registry...
+                </span>
+              </div>
+              <TableSkeleton rows={5} cols={5} />
             </div>
           ) : filteredOrders.length === 0 ? (
             /* Clean Empty State (Zero Mock Data) */

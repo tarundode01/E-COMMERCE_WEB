@@ -33,6 +33,7 @@ import AdminLayout from '../components/AdminLayout';
 import Input from '../components/Input';
 import Button from '../components/Button';
 import Badge from '../components/Badge';
+import { Shimmer } from '../components/ShimmerLoader';
 import {
   productService,
   orderService,
@@ -821,7 +822,7 @@ export default function AdminDashboard() {
                 <div>
                   <h3 className="font-serif text-2xl sm:text-3xl font-black text-brand-black tracking-tight mb-2">
                     {isLoading ? (
-                      <span className="inline-block w-20 h-7 bg-brand-border/40 rounded animate-pulse" />
+                      <Shimmer className="inline-block w-24 h-7 rounded-md" />
                     ) : (
                       stat.value
                     )}
@@ -1318,12 +1319,18 @@ export default function AdminDashboard() {
               </thead>
               <tbody className="divide-y divide-brand-border/50">
                 {isLoading ? (
-                  <tr>
-                    <td colSpan={8} className="py-12 text-center text-brand-muted">
-                      <Loader2 size={24} className="animate-spin text-brand-accent mx-auto mb-2" />
-                      <span>Retrieving live orders ledger...</span>
-                    </td>
-                  </tr>
+                  [...Array(5)].map((_, i) => (
+                    <tr key={i} className="animate-fade-in-up">
+                      <td className="py-3.5 px-5"><Shimmer className="h-4 w-24 rounded" /></td>
+                      <td className="py-3.5 px-5"><Shimmer className="h-4 w-28 rounded" /></td>
+                      <td className="py-3.5 px-5"><Shimmer className="h-3.5 w-20 rounded" /></td>
+                      <td className="py-3.5 px-5"><Shimmer className="h-3.5 w-16 rounded" /></td>
+                      <td className="py-3.5 px-5"><Shimmer className="h-4 w-16 rounded" /></td>
+                      <td className="py-3.5 px-5"><Shimmer className="h-4 w-16 rounded" /></td>
+                      <td className="py-3.5 px-5"><Shimmer className="h-5 w-20 rounded-full" /></td>
+                      <td className="py-3.5 px-5 text-right"><Shimmer className="h-7 w-16 rounded-md ml-auto" /></td>
+                    </tr>
+                  ))
                 ) : filteredRecentOrders.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="py-12 text-center text-brand-muted">

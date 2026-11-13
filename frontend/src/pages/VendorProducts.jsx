@@ -33,6 +33,7 @@ import {
 import Container from '../components/Container';
 import VendorLayout from '../components/VendorLayout';
 import Button from '../components/Button';
+import { TableSkeleton } from '../components/ShimmerLoader';
 import Badge from '../components/Badge';
 import Input from '../components/Input';
 import { vendorService, categoryService } from '../services/api';
@@ -636,11 +637,14 @@ export default function VendorProducts() {
         {/* ===================================================================== */}
         <div className="bg-brand-surface border border-brand-border/80 rounded-2xl shadow-xs overflow-hidden text-left">
           {isLoading ? (
-            <div className="py-20 text-center space-y-3">
-              <div className="w-9 h-9 border-2 border-brand-accent border-t-transparent rounded-full animate-spin mx-auto" />
-              <p className="text-xs font-semibold text-brand-charcoal uppercase tracking-wider">
-                Loading Atelier Inventory...
-              </p>
+            <div className="p-4 space-y-4 animate-fade-in-up">
+              <div className="flex items-center gap-3 p-3 bg-brand-cream/40 rounded-xl">
+                <div className="w-5 h-5 border-2 border-brand-accent border-t-transparent rounded-full animate-spin" />
+                <span className="text-xs font-semibold text-brand-charcoal uppercase tracking-wider">
+                  Loading Atelier Inventory...
+                </span>
+              </div>
+              <TableSkeleton rows={5} cols={5} />
             </div>
           ) : fetchError ? (
             <div className="py-16 text-center space-y-3 p-6">

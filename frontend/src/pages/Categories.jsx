@@ -13,6 +13,7 @@ import {
 import Container from '../components/Container';
 import SectionHeading from '../components/SectionHeading';
 import Button from '../components/Button';
+import { CategoryCardSkeleton } from '../components/ShimmerLoader';
 import { categoryService } from '../services/api';
 import watchImg from '../assets/luxury_watch.jpg';
 import bagImg from '../assets/luxury_bag.jpg';
@@ -127,26 +128,9 @@ export default function Categories() {
         )}
 
         {/* ========================================================================= */}
-        {/* 3. LOADING SKELETON STATE */}
+        {/* 3. LUXURY SHIMMER SKELETON STATE */}
         {/* ========================================================================= */}
-        {isLoading && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-            {[1, 2, 3, 4, 5, 6].map((idx) => (
-              <div
-                key={idx}
-                className="rounded-2xl overflow-hidden bg-brand-surface border border-brand-border/60 shadow-xs animate-pulse"
-              >
-                <div className="aspect-16/11 bg-brand-cream/60 w-full" />
-                <div className="p-6 space-y-3">
-                  <div className="h-4 bg-brand-border/60 rounded w-1/3" />
-                  <div className="h-6 bg-brand-border/60 rounded w-3/4" />
-                  <div className="h-3.5 bg-brand-border/50 rounded w-full" />
-                  <div className="h-3.5 bg-brand-border/50 rounded w-4/5" />
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+        {isLoading && <CategoryCardSkeleton count={6} />}
 
         {/* ========================================================================= */}
         {/* 4. EMPTY CATEGORIES STATE */}

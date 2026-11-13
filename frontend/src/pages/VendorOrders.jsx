@@ -42,6 +42,7 @@ import Container from '../components/Container';
 import VendorLayout from '../components/VendorLayout';
 import Button from '../components/Button';
 import Badge from '../components/Badge';
+import { TableSkeleton } from '../components/ShimmerLoader';
 import Input from '../components/Input';
 import LiveDeliveryMap from '../components/LiveDeliveryMap';
 import { orderService, vendorService, vendorDeliveryService } from '../services/api';
@@ -892,14 +893,19 @@ export default function VendorOrders() {
       {/* ORDERS CONTENT LIST / TABLE */}
       {/* ===================================================================== */}
       {isLoading ? (
-        <div className="bg-brand-surface border border-brand-border/70 rounded-2xl p-16 text-center max-w-lg mx-auto shadow-xs my-8">
-          <div className="w-10 h-10 border-2 border-brand-accent border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <h3 className="font-serif text-lg font-bold text-brand-black mb-1">
-            Synchronizing Store Orders...
-          </h3>
-          <p className="text-xs text-brand-muted">
-            Loading verified purchases for {store?.name || 'your atelier'}.
-          </p>
+        <div className="space-y-4 my-6 animate-fade-in-up">
+          <div className="flex items-center gap-3 p-4 bg-brand-surface rounded-2xl border border-brand-border/60 shadow-xs max-w-lg mx-auto">
+            <div className="w-5 h-5 border-2 border-brand-accent border-t-transparent rounded-full animate-spin shrink-0" />
+            <div className="text-left">
+              <h3 className="font-serif text-sm font-bold text-brand-black">
+                Synchronizing Store Orders...
+              </h3>
+              <p className="text-[11px] text-brand-muted">
+                Loading verified purchases for {store?.name || 'your atelier'}.
+              </p>
+            </div>
+          </div>
+          <TableSkeleton rows={5} cols={5} />
         </div>
       ) : fetchError ? (
         <div className="bg-brand-surface border border-rose-200 rounded-2xl p-10 text-center max-w-lg mx-auto shadow-xs my-8">

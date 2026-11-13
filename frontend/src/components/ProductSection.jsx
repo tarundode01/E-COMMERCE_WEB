@@ -4,6 +4,7 @@ import { ArrowRight } from 'lucide-react';
 import Container from './Container';
 import SectionHeading from './SectionHeading';
 import ProductCard from './ProductCard';
+import { ProductGridSkeleton } from './ShimmerLoader';
 import Button from './Button';
 import { productService } from '../services/api';
 import { products as defaultSampleProducts } from '../data/products';
@@ -79,10 +80,15 @@ export default function ProductSection({
   viewAllLink = '/shop',
 }) {
   const [liveProducts, setLiveProducts] = useState(initialPropProducts || null);
+  const [isLoading, setIsLoading] = useState(!initialPropProducts);
 
   useEffect(() => {
-    if (initialPropProducts) return;
+    if (initialPropProducts) {
+      setIsLoading(false);
+      return;
+    }
     let isMounted = true;
+    setIsLoading(true);
     productService
       .getProducts()
       .then((res) => {
@@ -99,6 +105,9 @@ export default function ProductSection({
       })
       .catch((err) => {
         console.warn('Unable to load live products for Home section, using fallback:', err);
+      })
+      .finally(() => {
+        if (isMounted) setIsLoading(false);
       });
 
     return () => {
@@ -118,22 +127,21 @@ export default function ProductSection({
           align="center"
         />
 
-        {/* Responsive 8-Product Grid:
-            - Mobile: 1 column
-            - Small tablets: 2 columns
-            - Large tablets: 3 columns
-            - Desktops: 4 columns
-        */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 sm:gap-7">
-          {displayProducts.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              onAddToCart={onAddToCart}
-              onToggleWishlist={onToggleWishlist}
-            />
-          ))}
-        </div>
+        {/* Responsive Product Grid with Shimmer Skeleton */}
+        {isLoading ? (
+          <ProductGridSkeleton count={8} cols={4} />
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 sm:gap-7">
+            {displayProducts.map((product) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                onAddToCart={onAddToCart}
+                onToggleWishlist={onToggleWishlist}
+              />
+            ))}
+          </div>
+        )}
 
         {/* "View All Products" Call-to-Action */}
         <div className="mt-14 sm:mt-16 flex justify-center">

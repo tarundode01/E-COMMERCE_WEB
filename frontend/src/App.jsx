@@ -39,6 +39,7 @@ import { CartProvider, useCart } from './context/CartContext';
 import { WishlistProvider } from './context/WishlistContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { FullPageShimmer } from './components/ShimmerLoader';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -100,18 +101,9 @@ function AppContent() {
   const isDedicatedSaaSRoute =
     isAdminRoute || isVendorDashboardRoute || isDeliveryRoute || isTrackingRoute || isAuthRoute;
 
-  // 1. Session verification loading state
+  // 1. Session verification loading state (Ultra-smooth luxury shimmer)
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-brand-offwhite flex items-center justify-center p-6">
-        <div className="text-center space-y-3">
-          <div className="w-9 h-9 border-2 border-brand-accent border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-xs font-semibold tracking-wider uppercase text-brand-charcoal">
-            Verifying Member Security...
-          </p>
-        </div>
-      </div>
-    );
+    return <FullPageShimmer />;
   }
 
   // 2. Strict Authentication Guard:

@@ -24,6 +24,7 @@ import AdminLayout from '../components/AdminLayout';
 import Button from '../components/Button';
 import Input from '../components/Input';
 import Badge from '../components/Badge';
+import { Shimmer } from '../components/ShimmerLoader';
 import { categoryService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import watchImg from '../assets/luxury_watch.jpg';
@@ -682,15 +683,24 @@ export default function AdminCategories() {
               </thead>
               <tbody className="divide-y divide-brand-border/50">
                 {isLoading && categoriesList.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="py-16 text-center text-brand-muted space-y-2">
-                      <Loader2 size={36} className="mx-auto text-brand-accent animate-spin" />
-                      <p className="text-sm font-semibold text-brand-charcoal">
-                        Loading categories from database...
-                      </p>
-                      <p className="text-xs">Fetching live records via GET /api/categories</p>
-                    </td>
-                  </tr>
+                  [...Array(5)].map((_, i) => (
+                    <tr key={i} className="animate-fade-in-up">
+                      <td className="py-3.5 px-5">
+                        <div className="flex items-center gap-3">
+                          <Shimmer className="h-10 w-10 rounded-lg shrink-0" />
+                          <div className="space-y-1.5 flex-1">
+                            <Shimmer className="h-3.5 w-28 rounded" />
+                            <Shimmer className="h-2.5 w-16 rounded" />
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-3.5 px-5"><Shimmer className="h-3.5 w-20 rounded" /></td>
+                      <td className="py-3.5 px-5"><Shimmer className="h-5 w-16 rounded-full" /></td>
+                      <td className="py-3.5 px-5 text-center"><Shimmer className="h-4 w-12 rounded mx-auto" /></td>
+                      <td className="py-3.5 px-5"><Shimmer className="h-3.5 w-44 rounded" /></td>
+                      <td className="py-3.5 px-5 text-right"><Shimmer className="h-7 w-20 rounded-md ml-auto" /></td>
+                    </tr>
+                  ))
                 ) : filteredCategories.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="py-16 text-center text-brand-muted space-y-3">

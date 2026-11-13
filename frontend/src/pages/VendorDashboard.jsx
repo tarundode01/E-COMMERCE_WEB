@@ -30,6 +30,7 @@ import {
 import VendorLayout from '../components/VendorLayout';
 import Button from '../components/Button';
 import Badge from '../components/Badge';
+import { Shimmer } from '../components/ShimmerLoader';
 import { vendorService, orderService, vendorDeliveryService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { VendorOrderStatusBadge } from './VendorOrders';
@@ -448,9 +449,17 @@ export default function VendorDashboard() {
           </div>
 
           {isLoading ? (
-            <div className="py-12 text-center">
-              <div className="w-8 h-8 border-2 border-brand-accent border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-              <p className="text-xs text-brand-muted">Loading transactions...</p>
+            <div className="py-4 space-y-3">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="py-3 flex items-center justify-between gap-4">
+                  <div className="space-y-1.5 flex-1">
+                    <Shimmer className="h-4 w-36 rounded" />
+                    <Shimmer className="h-3 w-24 rounded" />
+                  </div>
+                  <Shimmer className="h-4 w-16 rounded" />
+                  <Shimmer className="h-5 w-20 rounded-full" />
+                </div>
+              ))}
             </div>
           ) : recentOrders.length === 0 ? (
             <div className="py-12 text-center space-y-2">

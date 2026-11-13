@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import Container from '../components/Container';
 import ProductCard from '../components/ProductCard';
+import { ProductCardSkeleton, ProductGridSkeleton } from '../components/ShimmerLoader';
 import Input from '../components/Input';
 import Button from '../components/Button';
 import Badge from '../components/Badge';
@@ -1048,33 +1049,20 @@ export default function Shop({ onAddToCart, onToggleWishlist }) {
 
           {/* Main Products Display Area (9 Cols) */}
           <div className="lg:col-span-9 flex flex-col">
-            {/* Loading Skeleton State */}
+            {/* Luxury Shimmer Skeleton Loading State */}
             {isLoading && (
-              <div className="space-y-6">
-                <div className="flex items-center justify-center p-6 bg-brand-surface rounded-xl border border-brand-border/60 gap-3 text-brand-muted text-sm">
-                  <Loader2 size={18} className="animate-spin text-brand-accent" />
-                  <span>Retrieving luxury products from database...</span>
+              <div className="space-y-6 animate-fade-in-up">
+                <div className="flex items-center justify-between p-4 bg-brand-surface rounded-2xl border border-brand-border/60 shadow-xs">
+                  <div className="flex items-center gap-3">
+                    <Loader2 size={16} className="animate-spin text-brand-accent" />
+                    <span className="text-xs font-semibold text-brand-charcoal uppercase tracking-wider">
+                      Updating Curated Catalog...
+                    </span>
+                  </div>
+                  <span className="text-[11px] text-brand-muted">Fetching precision inventory</span>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-                  {[...Array(pageSize)].map((_, i) => (
-                    <div
-                      key={i}
-                      className="bg-brand-surface border border-brand-border/70 rounded-xl overflow-hidden shadow-xs animate-pulse flex flex-col"
-                    >
-                      <div className="aspect-square w-full bg-brand-border/40" />
-                      <div className="p-5 space-y-3">
-                        <div className="h-3 w-1/3 bg-brand-border/50 rounded" />
-                        <div className="h-5 w-4/5 bg-brand-border/60 rounded" />
-                        <div className="h-3 w-1/2 bg-brand-border/40 rounded" />
-                        <div className="pt-4 border-t border-brand-border/40 flex justify-between items-center">
-                          <div className="h-5 w-20 bg-brand-border/60 rounded" />
-                          <div className="h-8 w-24 bg-brand-border/50 rounded-lg" />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <ProductGridSkeleton count={pageSize} cols={3} />
               </div>
             )}
 

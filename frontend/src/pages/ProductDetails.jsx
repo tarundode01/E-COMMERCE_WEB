@@ -29,6 +29,7 @@ import Button from '../components/Button';
 import Badge from '../components/Badge';
 import ProductCard from '../components/ProductCard';
 import SectionHeading from '../components/SectionHeading';
+import { ProductDetailsSkeleton, Shimmer } from '../components/ShimmerLoader';
 import { products } from '../data/products';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
@@ -1007,13 +1008,34 @@ function ProductDetailsContent({ product, onAddToCart, onToggleWishlist }) {
                 </div>
               </div>
 
-              {/* Reviews Feed */}
+              {/* Reviews Feed with Shimmer Skeleton */}
               {isLoadingReviews ? (
-                <div className="bg-brand-surface border border-brand-border/70 p-12 rounded-2xl text-center space-y-3 shadow-xs">
-                  <Loader2 size={24} className="animate-spin text-brand-accent mx-auto" />
-                  <p className="text-xs sm:text-sm text-brand-muted">
-                    Retrieving verified client appraisals...
-                  </p>
+                <div className="space-y-4">
+                  {[...Array(3)].map((_, idx) => (
+                    <div
+                      key={idx}
+                      className="bg-brand-surface border border-brand-border/70 p-6 rounded-2xl shadow-xs space-y-4"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <Shimmer className="h-10 w-10 rounded-full" />
+                          <div className="space-y-1.5">
+                            <Shimmer className="h-4 w-28 rounded" />
+                            <Shimmer className="h-3 w-20 rounded" />
+                          </div>
+                        </div>
+                        <div className="flex gap-1">
+                          {[...Array(5)].map((_, i) => (
+                            <Shimmer key={i} className="h-3.5 w-3.5 rounded-sm" />
+                          ))}
+                        </div>
+                      </div>
+                      <div className="space-y-2 pt-1">
+                        <Shimmer className="h-3.5 w-full rounded" />
+                        <Shimmer className="h-3.5 w-4/5 rounded" />
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ) : reviewsError ? (
                 <div className="bg-rose-50 border border-rose-200 p-6 rounded-2xl text-center space-y-3">
@@ -1192,11 +1214,14 @@ export default function ProductDetails({ onAddToCart, onToggleWishlist }) {
   }, [id]);
 
   const [fetchedProduct, setFetchedProduct] = useState(null);
+  const [isFetchingProduct, setIsFetchingProduct] = useState(!staticProduct);
 
   useEffect(() => {
     if (!id) return;
 
     let active = true;
+    if (!staticProduct) setIsFetchingProduct(true);
+
     productService
       .getProductById(id)
       .then((res) => {
@@ -1206,12 +1231,19 @@ export default function ProductDetails({ onAddToCart, onToggleWishlist }) {
       })
       .catch((err) => {
         console.warn('Unable to fetch remote product details, using default:', err);
+      })
+      .finally(() => {
+        if (active) setIsFetchingProduct(false);
       });
 
     return () => {
       active = false;
     };
-  }, [id]);
+  }, [id, staticProduct]);
+
+  if (isFetchingProduct && !staticProduct && !fetchedProduct) {
+    return <ProductDetailsSkeleton />;
+  }
 
   const product = fetchedProduct || staticProduct || products[0];
 
