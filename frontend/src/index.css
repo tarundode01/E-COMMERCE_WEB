@@ -108,12 +108,19 @@ html.dark *::after {
   border-color: var(--color-brand-border);
 }
 
-/* Glassmorphic Dark Navigation Header */
-html.dark header {
+/* Glassmorphic Dark Navigation Header (for internal admin/vendor views; customer header retains signature luxury palette) */
+html.dark header:not(.royal-customer-header) {
   background-color: rgba(19, 21, 29, 0.88) !important;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Ensure customer header in dark mode stays warm champagne gold and never turns black */
+html.dark header.royal-customer-header {
+  background: linear-gradient(to right, #FAF4E8, #F5E8D2, #ECE0C8) !important;
+  border-bottom-color: rgba(212, 175, 55, 0.6) !important;
+  color: #241A10 !important;
 }
 
 /* Deep Obsidian Surfaces & Cards */
@@ -423,4 +430,49 @@ html.dark .bg-rose-100 {
 html {
   transition: background-color 0.25s ease, color 0.25s ease;
 }
+
+/* ==========================================================================
+   Luxury E-Commerce Micro-Animations & Glow Effects
+   ========================================================================== */
+@keyframes luxuryGoldGlow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.4), 0 2px 8px rgba(180, 140, 70, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 14px 3px rgba(212, 175, 55, 0.55), 0 4px 14px rgba(180, 140, 70, 0.3);
+  }
+}
+
+@keyframes luxuryBadgePulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.12);
+  }
+}
+
+@keyframes luxurySparkle {
+  0%, 100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(1.25) rotate(180deg);
+    opacity: 1;
+  }
+}
+
+.animate-gold-glow {
+  animation: luxuryGoldGlow 3s infinite ease-in-out;
+}
+
+.animate-badge-pulse {
+  animation: luxuryBadgePulse 2.4s infinite ease-in-out;
+}
+
+.animate-sparkle-spin {
+  animation: luxurySparkle 3s infinite ease-in-out;
+}
+
 
