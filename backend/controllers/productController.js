@@ -63,24 +63,34 @@ export const getProducts = async (req, res) => {
       category.trim().toLowerCase() !== 'all'
     ) {
       const cleanCat = category.trim();
-      const matchedCategory = await Category.findOne({
-        $or: [
-          { name: { $regex: `^${escapeRegex(cleanCat)}$`, $options: 'i' } },
-          { slug: cleanCat.toLowerCase() },
-        ],
-      });
 
-      if (matchedCategory) {
-        filter.category = {
-          $regex: `^${escapeRegex(matchedCategory.name)}$`,
-          $options: 'i',
-        };
+      if (cleanCat.toLowerCase() === 'smartphones' || cleanCat.toLowerCase() === 'mobile') {
+        filter.category = { $regex: '^(mobile|smartphones)$', $options: 'i' };
       } else {
-        filter.category = {
-          $regex: `^${escapeRegex(cleanCat)}$`,
-          $options: 'i',
-        };
+        const matchedCategory = await Category.findOne({
+          $or: [
+            { name: { $regex: `^${escapeRegex(cleanCat)}$`, $options: 'i' } },
+            { slug: cleanCat.toLowerCase() },
+          ],
+        });
+
+        if (matchedCategory) {
+          filter.category = {
+            $regex: `^${escapeRegex(matchedCategory.name)}$`,
+            $options: 'i',
+          };
+        } else {
+          filter.category = {
+            $regex: `^${escapeRegex(cleanCat)}$`,
+            $options: 'i',
+          };
+        }
       }
+    }
+
+    // Explicit featured filter
+    if (req.query.featured === 'true' || req.query.isFeatured === 'true') {
+      filter.isFeatured = true;
     }
 
     // 3. Price range filters: minPrice & maxPrice
@@ -110,16 +120,20 @@ export const getProducts = async (req, res) => {
     }
 
     // 6. Sorting configuration
-    let sortOption = { createdAt: -1 }; // Default: Newest first
+    let sortOption = { isFeatured: -1, createdAt: -1 }; // Default: Curated Featured items first
 
-    if (sort === 'price-asc') {
+    if (sort === 'trending') {
+      sortOption = { numReviews: -1, rating: -1, price: -1 };
+    } else if (sort === 'newest') {
+      sortOption = { createdAt: -1, _id: -1 };
+    } else if (sort === 'featured') {
+      sortOption = { isFeatured: -1, rating: -1, createdAt: -1 };
+    } else if (sort === 'price-asc') {
       sortOption = { price: 1, createdAt: -1 };
     } else if (sort === 'price-desc') {
       sortOption = { price: -1, createdAt: -1 };
     } else if (sort === 'rating') {
       sortOption = { rating: -1, numReviews: -1, createdAt: -1 };
-    } else if (sort === 'newest') {
-      sortOption = { createdAt: -1 };
     } else if (sort === 'name-asc') {
       sortOption = { name: 1 };
     } else if (sort === 'name-desc') {

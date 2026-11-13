@@ -182,10 +182,8 @@ export default function Shop({ onAddToCart, onToggleWishlist }) {
     setMaxPrice(urlMaxPrice);
     setMinRating(urlRating);
     setSortBy(urlSort);
+    setCurrentPage(!isNaN(urlPage) && urlPage > 0 ? urlPage : 1);
 
-    if (!isNaN(urlPage) && urlPage > 0) {
-      setCurrentPage(urlPage);
-    }
     if (!isNaN(urlLimit) && [6, 9, 12, 24].includes(urlLimit)) {
       setPageSize(urlLimit);
     }
@@ -221,11 +219,14 @@ export default function Shop({ onAddToCart, onToggleWishlist }) {
     }
 
     const newQuery = params.toString();
-    const newUrl = newQuery
-      ? `${window.location.pathname}?${newQuery}`
-      : window.location.pathname;
+    const currentQuery = location.search.startsWith('?') ? location.search.slice(1) : location.search;
 
-    window.history.replaceState(null, '', newUrl);
+    if (newQuery !== currentQuery) {
+      const newUrl = newQuery
+        ? `${window.location.pathname}?${newQuery}`
+        : window.location.pathname;
+      window.history.replaceState(null, '', newUrl);
+    }
 
     try {
       if (newQuery) {
@@ -245,6 +246,7 @@ export default function Shop({ onAddToCart, onToggleWishlist }) {
     sortBy,
     currentPage,
     pageSize,
+    location.search,
   ]);
 
   // --- Fetch live catalog from Backend API with server-side filters & pagination ---
@@ -429,25 +431,118 @@ export default function Shop({ onAddToCart, onToggleWishlist }) {
   return (
     <div className="min-h-screen bg-brand-offwhite py-10 sm:py-14 transition-colors">
       <Container size="default">
-        {/* Page Header */}
+        {/* Page Header with Dynamic Title based on Active Filter / Sort */}
         <div
           ref={productsTopRef}
-          className="mb-10 text-center sm:text-left border-b border-brand-border/60 pb-8 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4"
+          className="mb-8 text-center sm:text-left border-b border-brand-border/60 pb-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4"
         >
           <div>
-            <p className="text-xs font-semibold tracking-widest uppercase text-brand-accent mb-2">
-              The Catalog
-            </p>
+            <div className="flex items-center gap-2 justify-center sm:justify-start mb-2">
+              <span className="text-[10px] font-black tracking-widest uppercase px-2 py-0.5 rounded-full bg-gradient-to-r from-[#C9972C] to-[#E2B755] text-[#241A10]">
+                {sortBy === 'newest'
+                  ? 'New Arrivals'
+                  : sortBy === 'trending'
+                  ? 'Trending & Best Sellers'
+                  : selectedCategory && selectedCategory !== 'All'
+                  ? `Category: ${selectedCategory}`
+                  : 'Curated Catalog'}
+              </span>
+            </div>
             <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-brand-black">
-              Shop All Products
+              {sortBy === 'newest'
+                ? 'New In: Recent Novelties'
+                : sortBy === 'trending'
+                ? 'Trending Pieces & Patron Favorites'
+                : selectedCategory && selectedCategory !== 'All'
+                ? selectedCategory
+                : 'Shop All Collections'}
             </h1>
             <p className="mt-2 text-sm sm:text-base text-brand-muted max-w-2xl leading-relaxed">
-              Explore our masterfully crafted luxury goods, timeless horology, and haute couture.
+              {sortBy === 'newest'
+                ? 'The freshest additions to our royal atelier, updated in real time.'
+                : sortBy === 'trending'
+                ? 'Our most celebrated creations, ranked by genuine patron reviews and five-star acclaim.'
+                : selectedCategory && selectedCategory !== 'All'
+                ? `Explore authentic, handcrafted pieces in ${selectedCategory}.`
+                : 'Explore our masterfully crafted luxury goods, timeless horology, and haute couture.'}
             </p>
+
+            {/* Active Quick Filters Bar */}
+            {(selectedCategory !== 'All' || sortBy !== 'featured' || debouncedSearch.trim()) && (
+              <div className="flex flex-wrap items-center gap-2 mt-4 pt-3 border-t border-brand-border/40">
+                <span className="text-xs font-semibold text-brand-muted">Active:</span>
+
+                {selectedCategory !== 'All' && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-[#EEDBB8] text-[#5C4215]">
+                    <span>Category: {selectedCategory}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleCategorySelect('All')}
+                      className="hover:text-rose-600 cursor-pointer"
+                      title="Clear category filter"
+                    >
+                      <X size={12} />
+                    </button>
+                  </span>
+                )}
+
+                {sortBy !== 'featured' && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-[#EEDBB8] text-[#5C4215]">
+                    <span>
+                      Sort:{' '}
+                      {sortBy === 'newest'
+                        ? 'New In'
+                        : sortBy === 'trending'
+                        ? 'Trending'
+                        : sortBy === 'rating'
+                        ? 'Highest Rated'
+                        : sortBy === 'price-asc'
+                        ? 'Price: Low-High'
+                        : sortBy === 'price-desc'
+                        ? 'Price: High-Low'
+                        : sortBy}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleSortChange('featured')}
+                      className="hover:text-rose-600 cursor-pointer"
+                      title="Reset sort to featured"
+                    >
+                      <X size={12} />
+                    </button>
+                  </span>
+                )}
+
+                {debouncedSearch.trim() && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-[#EEDBB8] text-[#5C4215]">
+                    <span>Search: "{debouncedSearch}"</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSearchQuery('');
+                        setDebouncedSearch('');
+                      }}
+                      className="hover:text-rose-600 cursor-pointer"
+                      title="Clear search"
+                    >
+                      <X size={12} />
+                    </button>
+                  </span>
+                )}
+
+                <button
+                  type="button"
+                  onClick={handleResetFilters}
+                  className="text-xs font-bold text-[#A8791E] hover:underline ml-2 cursor-pointer"
+                >
+                  Reset All &rarr;
+                </button>
+              </div>
+            )}
           </div>
 
           {!isLoading && !apiError && (
-            <div className="text-xs text-brand-muted font-medium sm:text-right flex flex-col items-center sm:items-end gap-1">
+            <div className="text-xs text-brand-muted font-medium sm:text-right flex flex-col items-center sm:items-end gap-1 shrink-0">
               <span>
                 Showing <strong className="text-brand-black font-semibold">{rangeStart}–{rangeEnd}</strong> of{' '}
                 <strong className="text-brand-black font-semibold">{totalProducts}</strong> items
@@ -541,10 +636,11 @@ export default function Shop({ onAddToCart, onToggleWishlist }) {
                   className="bg-brand-offwhite border border-brand-border text-xs sm:text-sm font-medium text-brand-black pl-3 pr-8 py-2 rounded-md focus:outline-none focus:ring-1 focus:ring-brand-black cursor-pointer appearance-none shadow-2xs"
                 >
                   <option value="featured">Featured Collection</option>
-                  <option value="price-asc">Price: Low to High</option>
-                  <option value="price-desc">Price: High to Low</option>
+                  <option value="trending">Trending & Best Sellers</option>
                   <option value="newest">Newest Arrivals</option>
                   <option value="rating">Highest Rated</option>
+                  <option value="price-asc">Price: Low to High</option>
+                  <option value="price-desc">Price: High to Low</option>
                 </select>
                 <ArrowUpDown
                   size={13}
