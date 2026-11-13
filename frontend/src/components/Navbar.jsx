@@ -133,34 +133,34 @@ export default function Navbar({ cartCount: propCartCount }) {
   return (
     <header className="royal-customer-header sticky top-0 z-50 w-full bg-gradient-to-r from-[#FAF4E8] via-[#F5E8D2] to-[#ECE0C8] border-b border-[#D4AF37]/60 shadow-[0_6px_30px_rgba(180,140,70,0.15)] transition-all">
       <Container size="default">
-        <div className="flex items-center justify-between h-20">
+        <div className="flex items-center justify-between h-16 sm:h-20 gap-2">
           {/* Mobile Hamburger Button */}
-          <div className="flex items-center md:hidden">
+          <div className="flex items-center md:hidden shrink-0">
             <button
               type="button"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="p-2 -ml-2 text-[#2D2115] hover:text-[#B4842E] transition-colors focus:outline-none cursor-pointer"
+              className="p-2 text-[#2D2115] hover:text-[#B4842E] transition-colors focus:outline-none cursor-pointer rounded-xl hover:bg-[#E7D4B0]/50"
               aria-label="Toggle Navigation Menu"
             >
-              {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+              {isMobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
             </button>
           </div>
 
-          {/* Brand Logo with 3D Hover & Gold Shadow */}
-          <div className="flex items-center">
-            <SafeLink to="/" className="flex items-center gap-2.5 sm:gap-3 group">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#E2B755] via-[#C9972C] to-[#9E6E16] p-[2px] shadow-sm shadow-[#C9972C]/30 group-hover:scale-105 group-hover:shadow-[0_0_18px_rgba(201,151,44,0.5)] transition-all duration-300">
+          {/* Brand Logo with 3D Hover & Gold Shadow (Fully Mobile-Responsive) */}
+          <div className="flex items-center min-w-0">
+            <SafeLink to="/" className="flex items-center gap-2 sm:gap-3 group">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-[#E2B755] via-[#C9972C] to-[#9E6E16] p-[2px] shadow-sm shadow-[#C9972C]/30 group-hover:scale-105 group-hover:shadow-[0_0_18px_rgba(201,151,44,0.5)] transition-all duration-300 shrink-0">
                 <div className="w-full h-full bg-[#FAF5EC] rounded-[10px] flex items-center justify-center">
-                  <span className="font-serif font-black text-[#A8791E] text-xl group-hover:scale-110 transition-transform">
+                  <span className="font-serif font-black text-[#A8791E] text-base sm:text-xl group-hover:scale-110 transition-transform">
                     P
                   </span>
                 </div>
               </div>
-              <div className="flex flex-col">
-                <span className="font-serif text-xl sm:text-2xl font-bold tracking-tight text-[#241A10] group-hover:text-[#A8791E] transition-colors leading-none">
+              <div className="flex flex-col min-w-0">
+                <span className="font-serif text-base sm:text-2xl font-bold tracking-tight text-[#241A10] group-hover:text-[#A8791E] transition-colors leading-none truncate">
                   Premium Store
                 </span>
-                <span className="text-[9px] uppercase tracking-[0.25em] text-[#8E6A2B] font-bold mt-1">
+                <span className="hidden xs:inline-block text-[8px] sm:text-[9px] uppercase tracking-[0.2em] sm:tracking-[0.25em] text-[#8E6A2B] font-bold mt-1 truncate">
                   Royal Luxury Atelier
                 </span>
               </div>
@@ -526,22 +526,34 @@ export default function Navbar({ cartCount: propCartCount }) {
                 )}
               </div>
             ) : (
-              <SafeLink
-                to="/login"
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-[#C9972C] via-[#DDB04E] to-[#B47C1E] hover:from-[#B47C1E] hover:to-[#9E6E16] text-[#241A10] font-bold text-xs shadow-md shadow-[#C9972C]/30 hover:scale-[1.02] transition-all border border-[#F3DE9D]"
-                aria-label="Account / Sign In"
-                title="Account / Sign In"
-              >
-                <User size={15} className="text-[#241A10]" />
-                <span>Sign In</span>
-              </SafeLink>
+              <>
+                {/* Desktop Sign In Button */}
+                <SafeLink
+                  to="/login"
+                  className="hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-[#C9972C] via-[#DDB04E] to-[#B47C1E] hover:from-[#B47C1E] hover:to-[#9E6E16] text-[#241A10] font-bold text-xs shadow-md shadow-[#C9972C]/30 hover:scale-[1.02] transition-all border border-[#F3DE9D] shrink-0"
+                  aria-label="Account / Sign In"
+                  title="Account / Sign In"
+                >
+                  <User size={15} className="text-[#241A10]" />
+                  <span>Sign In</span>
+                </SafeLink>
+                {/* Mobile Compact User Icon Button */}
+                <SafeLink
+                  to="/login"
+                  className="sm:hidden p-2 text-[#382B1D] hover:text-[#8E6A2B] hover:bg-[#E7D4B0]/60 rounded-xl transition-all flex items-center justify-center border border-[#D4AF37]/50"
+                  aria-label="Account / Sign In"
+                  title="Account / Sign In"
+                >
+                  <User size={17} className="text-[#8E6A2B]" />
+                </SafeLink>
+              </>
             )}
           </div>
         </div>
       </Container>
 
-      {/* Royal Champagne Category Filtering Sub-Header (Live MongoDB API Integration with Smooth Hover Lift) */}
-      <div className="bg-[#FAF4E8]/95 backdrop-blur-md border-t border-[#D8C49E]/50 px-4 py-2 overflow-x-auto scrollbar-none shadow-2xs">
+      {/* Royal Champagne Category Filtering Sub-Header (Live MongoDB API Integration with Smooth Touch Glide) */}
+      <div className="bg-[#FAF4E8]/95 backdrop-blur-md border-t border-[#D8C49E]/50 px-3 sm:px-4 py-2 overflow-x-auto scrollbar-none shadow-2xs touch-pan-x overscroll-x-contain">
         <Container size="default">
           <div className="flex items-center gap-2 sm:gap-3 text-xs whitespace-nowrap">
             {/* Quick label with Spinning Gold Sparkle */}
@@ -671,199 +683,346 @@ export default function Navbar({ cartCount: propCartCount }) {
         </div>
       )}
 
-      {/* Mobile Drawer Menu */}
+      {/* Mobile Luxury Off-Canvas Slide Drawer & Backdrop */}
       {isMobileMenuOpen && (
-        <div className="md:hidden border-t border-[#D8C49E]/60 bg-[#FAF5EB] py-5 px-6 animate-in slide-in-from-top duration-300 shadow-2xl">
-          {/* Mobile Search Form */}
-          <form onSubmit={handleNavSearch} className="flex items-center gap-2 pb-4 mb-3 border-b border-[#D8C49E]/40">
-            <input
-              type="search"
-              value={navSearchQuery}
-              onChange={(e) => setNavSearchQuery(e.target.value)}
-              placeholder="Search catalog..."
-              className="flex-1 bg-white border border-[#D4AF37]/60 rounded-xl px-3 py-2 text-xs font-medium text-[#241A10] focus:outline-none"
-            />
-            <button
-              type="submit"
-              className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#C9972C] to-[#E2B755] text-[#241A10] font-black text-xs shrink-0"
-            >
-              Search
-            </button>
-          </form>
+        <div className="md:hidden fixed inset-0 z-50 flex">
+          {/* Backdrop Blur Overlay */}
+          <div
+            className="fixed inset-0 bg-[#1A140E]/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-300"
+            onClick={() => setIsMobileMenuOpen(false)}
+            aria-hidden="true"
+          />
 
-          <nav className="flex flex-col space-y-3">
-            <SafeLink
-              to="/"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="text-sm font-bold text-[#241A10] hover:text-[#A8791E] py-1.5 border-b border-[#D8C49E]/30"
-            >
-              Home
-            </SafeLink>
-
-            <SafeLink
-              to="/shop"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="text-sm font-bold text-[#241A10] hover:text-[#A8791E] py-1.5 border-b border-[#D8C49E]/30"
-            >
-              Shop All Collections
-            </SafeLink>
-
-            <SafeLink
-              to="/shop?sort=newest"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="flex items-center justify-between text-sm font-bold text-[#241A10] hover:text-[#A8791E] py-1.5 border-b border-[#D8C49E]/30"
-            >
-              <span>New Arrivals</span>
-              <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-gradient-to-r from-[#C9972C] to-[#E2B755] text-[#241A10]">
-                NEW
-              </span>
-            </SafeLink>
-
-            <SafeLink
-              to="/shop?sort=trending"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="flex items-center justify-between text-sm font-bold text-[#241A10] hover:text-[#A8791E] py-1.5 border-b border-[#D8C49E]/30"
-            >
-              <div className="flex items-center gap-2">
-                <TrendingUp size={14} className="text-[#C9972C]" />
-                <span>Trending Pieces</span>
+          {/* Luxury Slide-In Drawer */}
+          <div className="relative w-[85%] max-w-sm bg-gradient-to-b from-[#FAF5EC] via-[#F6EDE0] to-[#EFE2CE] text-[#241A10] shadow-2xl flex flex-col h-full z-10 overflow-hidden border-r-2 border-[#D4AF37]/60 animate-in slide-in-from-left duration-300">
+            {/* Drawer Header */}
+            <div className="p-4 sm:p-5 border-b border-[#D8C49E]/60 flex items-center justify-between bg-[#FAF4E8]/90">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#E2B755] to-[#9E6E16] p-0.5 shadow-sm">
+                  <div className="w-full h-full bg-[#FAF5EC] rounded-[6px] flex items-center justify-center">
+                    <span className="font-serif font-black text-[#A8791E] text-sm">P</span>
+                  </div>
+                </div>
+                <div>
+                  <h3 className="font-serif text-sm font-bold tracking-tight text-[#241A10] leading-none">
+                    Premium Store
+                  </h3>
+                  <span className="text-[8px] uppercase tracking-widest text-[#8E6A2B] font-bold">
+                    Royal Luxury Atelier
+                  </span>
+                </div>
               </div>
-            </SafeLink>
 
-            {/* Mobile Categories Accordion/Tags */}
-            <div className="border-b border-[#D8C49E]/30 pb-2.5">
-              <SafeLink
-                to="/categories"
+              {/* Close Button with Gold Circle */}
+              <button
+                type="button"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="text-sm font-bold text-[#241A10] hover:text-[#A8791E] py-1.5 flex items-center justify-between"
+                className="w-8 h-8 rounded-full bg-[#EEDBB8]/80 hover:bg-[#E2B755] text-[#382B1D] hover:text-[#1F160E] flex items-center justify-center transition-all cursor-pointer shadow-xs"
+                aria-label="Close Navigation Menu"
               >
-                <span>Curated Categories</span>
-                <span className="text-[10px] text-[#A8791E] font-bold">Explore All &rarr;</span>
-              </SafeLink>
-              {categoriesList.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 pt-1.5">
-                  {categoriesList.slice(0, 6).map((cat) => (
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Scrollable Drawer Content */}
+            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+              {/* Member Status Card */}
+              {isAuthenticated && user ? (
+                <div className="p-3.5 bg-gradient-to-r from-[#FAF4E8] to-[#F3E5CB] rounded-2xl border border-[#D4AF37]/50 shadow-xs flex items-center justify-between">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <span className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#E2B755] to-[#9E6E16] text-white text-xs flex items-center justify-center font-bold shadow-xs shrink-0">
+                      {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-[#241A10] truncate">{user.name}</p>
+                      <p className="text-[10px] text-[#8E6A2B] font-medium truncate">{user.email}</p>
+                      <span className="inline-block mt-0.5 text-[8.5px] font-black uppercase tracking-wider text-[#A8791E]">
+                        ★ Verified Patron
+                      </span>
+                    </div>
+                  </div>
+                  <SafeLink
+                    to="/account"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="text-[10px] font-bold text-[#8E6A2B] hover:text-[#241A10] px-2 py-1 bg-white/70 rounded-lg border border-[#D8C49E]/50 shrink-0"
+                  >
+                    Profile &rarr;
+                  </SafeLink>
+                </div>
+              ) : (
+                <div className="p-3.5 bg-gradient-to-r from-[#FAF4E8] to-[#F3E5CB] rounded-2xl border border-[#D4AF37]/50 shadow-xs flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-bold text-[#241A10]">Welcome to Premium Store</p>
+                    <p className="text-[10px] text-[#8E6A2B]">Sign in for exclusive member privileges</p>
+                  </div>
+                  <SafeLink
+                    to="/login"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#C9972C] to-[#E2B755] text-[#241A10] text-xs font-black shadow-xs shrink-0"
+                  >
+                    Sign In
+                  </SafeLink>
+                </div>
+              )}
+
+              {/* Mobile Drawer Search Bar */}
+              <form onSubmit={handleNavSearch} className="relative">
+                <input
+                  type="search"
+                  value={navSearchQuery}
+                  onChange={(e) => setNavSearchQuery(e.target.value)}
+                  placeholder="Search 35+ luxury items..."
+                  className="w-full bg-white/90 border border-[#D4AF37]/60 rounded-xl pl-9 pr-8 py-2 text-xs font-medium text-[#241A10] focus:outline-none focus:ring-1 focus:ring-[#C9972C]"
+                />
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8E6A2B]" />
+                {navSearchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setNavSearchQuery('')}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#8E7658] hover:text-[#241A10]"
+                  >
+                    <X size={13} />
+                  </button>
+                )}
+              </form>
+
+              {/* Primary Navigation Tiles */}
+              <nav className="space-y-1">
+                <SafeLink
+                  to="/"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                    location.pathname === '/'
+                      ? 'bg-gradient-to-r from-[#C9972C] to-[#E2B755] text-[#241A10] shadow-xs'
+                      : 'text-[#382B1D] hover:bg-[#EEDBB8]/60 hover:text-[#1F160E]'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Sparkles size={15} className="text-[#C9972C]" />
+                    <span>Home</span>
+                  </div>
+                  <span className="text-[10px] text-[#8E6A2B]">&rarr;</span>
+                </SafeLink>
+
+                <SafeLink
+                  to="/shop"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                    location.pathname === '/shop' && !currentSortParam && !currentCategoryParam
+                      ? 'bg-gradient-to-r from-[#C9972C] to-[#E2B755] text-[#241A10] shadow-xs'
+                      : 'text-[#382B1D] hover:bg-[#EEDBB8]/60 hover:text-[#1F160E]'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <ShoppingBag size={15} className="text-[#C9972C]" />
+                    <span>Shop All Collections</span>
+                  </div>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/70 text-[#5C4010] font-mono font-bold">
+                    35+
+                  </span>
+                </SafeLink>
+
+                <SafeLink
+                  to="/shop?sort=newest"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold text-[#382B1D] hover:bg-[#EEDBB8]/60 transition-all"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Zap size={15} className="text-amber-600 fill-amber-500" />
+                    <span>New Arrivals</span>
+                  </div>
+                  <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-gradient-to-r from-[#C9972C] to-[#E2B755] text-[#241A10]">
+                    NEW
+                  </span>
+                </SafeLink>
+
+                <SafeLink
+                  to="/shop?sort=trending"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold text-[#382B1D] hover:bg-[#EEDBB8]/60 transition-all"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <TrendingUp size={15} className="text-[#C9972C]" />
+                    <span>Trending & Best Sellers</span>
+                  </div>
+                  <span className="text-[9px] text-[#A8791E] font-bold">HOT</span>
+                </SafeLink>
+
+                <SafeLink
+                  to="/categories"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold text-[#382B1D] hover:bg-[#EEDBB8]/60 transition-all"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Store size={15} className="text-[#C9972C]" />
+                    <span>Explore Categories</span>
+                  </div>
+                  <span className="text-[10px] text-[#8E6A2B]">&rarr;</span>
+                </SafeLink>
+              </nav>
+
+              {/* Categories Pills Grid */}
+              <div className="pt-2 border-t border-[#D8C49E]/50">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[10px] uppercase font-bold tracking-widest text-[#8E6A2B]">
+                    Signature Segments
+                  </span>
+                  <SafeLink
+                    to="/categories"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="text-[10px] font-bold text-[#A8791E] hover:underline"
+                  >
+                    View All
+                  </SafeLink>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {(categoriesList.length > 0 ? categoriesList.slice(0, 6) : [
+                    { name: 'Luxury Horology' },
+                    { name: 'Handcrafted Goods' },
+                    { name: 'Fine Fragrance' },
+                    { name: 'Designer Eyewear' },
+                    { name: 'Haute Couture' },
+                  ]).map((cat) => (
                     <SafeLink
                       key={cat._id || cat.slug || cat.name}
                       to={`/shop?category=${encodeURIComponent(cat.name)}`}
                       onClick={() => setIsMobileMenuOpen(false)}
-                      className="px-2 py-1 rounded-lg bg-[#EEDBB8]/60 hover:bg-[#EEDBB8] text-[11px] font-semibold text-[#382B1D]"
+                      className="px-2.5 py-1 rounded-lg bg-white/70 hover:bg-white border border-[#D8C49E]/50 text-[11px] font-semibold text-[#382B1D] shadow-2xs hover:scale-102 transition-all"
                     >
                       {cat.name}
                     </SafeLink>
                   ))}
                 </div>
-              )}
+              </div>
+
+              {/* Patron Personal Dossier Quick Actions */}
+              <div className="pt-2 border-t border-[#D8C49E]/50 space-y-1">
+                <span className="text-[10px] uppercase font-bold tracking-widest text-[#8E6A2B] block mb-1">
+                  Patron Services
+                </span>
+
+                <SafeLink
+                  to="/wishlist"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-bold text-[#382B1D] hover:bg-[#EEDBB8]/60 transition-all"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Heart size={15} className="text-rose-500" />
+                    <span>Saved Wishlist</span>
+                  </div>
+                  {wishlistCount > 0 && (
+                    <Badge variant="sale" size="sm" className="!px-2 !py-0.2 rounded-full text-[10px]">
+                      {wishlistCount}
+                    </Badge>
+                  )}
+                </SafeLink>
+
+                <SafeLink
+                  to="/orders"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-bold text-[#382B1D] hover:bg-[#EEDBB8]/60 transition-all"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <PackageCheck size={15} className="text-[#A8791E]" />
+                    <span>My Orders & Tracking</span>
+                  </div>
+                  <span className="text-[10px] uppercase font-bold text-[#A8791E]">Track</span>
+                </SafeLink>
+
+                <SafeLink
+                  to="/cart"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-bold text-[#382B1D] hover:bg-[#EEDBB8]/60 transition-all"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <ShoppingBag size={15} className="text-[#A8791E]" />
+                    <span>Shopping Bag</span>
+                  </div>
+                  {cartCount > 0 && (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#A8791E] text-white">
+                      {cartCount}
+                    </span>
+                  )}
+                </SafeLink>
+
+                {/* Sell With Us / Vendor Onboarding */}
+                {(!isAuthenticated || (user && user.role === 'user')) && (
+                  <SafeLink
+                    to="/vendor/register"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-bold text-[#5C4010] bg-[#EEDBB8]/50 border border-[#D4AF37]/40 hover:bg-[#EEDBB8] transition-all my-1.5"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Store size={14} className="text-[#A8791E]" />
+                      <span>Sell With Us / Become a Vendor</span>
+                    </div>
+                    <span className="text-[10px] text-[#A8791E] font-bold">&rarr;</span>
+                  </SafeLink>
+                )}
+
+                {/* Vendor Portal for Vendors */}
+                {isAuthenticated && user && user.role === 'vendor' && (
+                  <SafeLink
+                    to="/vendor/dashboard"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider text-emerald-900 bg-emerald-500/20 border border-emerald-600/40"
+                  >
+                    <span>Merchant Portal</span>
+                    <Badge variant="accent" size="sm">Vendor</Badge>
+                  </SafeLink>
+                )}
+
+                {/* Admin Portal for Admins */}
+                {isAuthenticated && user && user.role === 'admin' && (
+                  <SafeLink
+                    to="/admin/orders"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider text-[#5C4010] bg-[#E2B755]/20 border border-[#C9972C]/40"
+                  >
+                    <span>Admin Orders Ledger</span>
+                    <Badge variant="accent" size="sm">Admin</Badge>
+                  </SafeLink>
+                )}
+              </div>
             </div>
 
-            {/* Mobile Actions: Wishlist, Orders, Vendor */}
-            <div className="pt-2 flex flex-col space-y-2">
-              <SafeLink
-                to="/wishlist"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="flex items-center justify-between text-sm font-bold text-[#382B1D] hover:text-[#A8791E] py-1.5"
-              >
-                <div className="flex items-center gap-3">
-                  <Heart size={18} className="text-rose-500" />
-                  <span>Wishlist</span>
-                </div>
-                {wishlistCount > 0 && (
-                  <Badge variant="sale" size="sm" className="!px-2 !py-0.5 rounded-full text-[10px]">
-                    {wishlistCount}
-                  </Badge>
-                )}
-              </SafeLink>
-
-              <SafeLink
-                to="/orders"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="flex items-center justify-between text-sm font-bold text-[#382B1D] hover:text-[#A8791E] py-1.5"
-              >
-                <div className="flex items-center gap-3">
-                  <PackageCheck size={18} className="text-[#A8791E]" />
-                  <span>My Orders & Tracking</span>
-                </div>
-                <span className="text-[10px] uppercase font-bold text-[#A8791E]">Track</span>
-              </SafeLink>
-
-              {/* Vendor Portal for Vendors */}
-              {isAuthenticated && user && user.role === 'vendor' && (
-                <SafeLink
-                  to="/vendor/dashboard"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-emerald-900 bg-emerald-500/20 border border-emerald-600/40 px-3 py-2 rounded-xl"
+            {/* Drawer Bottom Controls: Theme Toggle & Sign Out */}
+            <div className="p-4 border-t border-[#D8C49E]/60 bg-[#FAF4E8]/90 space-y-2">
+              <div className="flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={toggleTheme}
+                  className="flex items-center gap-2 text-xs font-bold text-[#382B1D] hover:text-[#A8791E] p-1.5 cursor-pointer"
                 >
-                  <span>Merchant Portal</span>
-                  <Badge variant="accent" size="sm">Vendor</Badge>
-                </SafeLink>
-              )}
+                  {isDark ? <Sun size={15} className="text-[#C9972C]" /> : <Moon size={15} />}
+                  <span>{isDark ? 'Light Mode' : 'Dark Mode'}</span>
+                </button>
 
-              {/* Sell With Us for Customers / Guests */}
-              {(!isAuthenticated || (user && user.role === 'user')) && (
-                <SafeLink
-                  to="/vendor/register"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center justify-between text-xs font-bold text-[#5C4010] bg-[#EEDBB8]/40 border border-[#D4AF37]/40 px-3 py-2 rounded-xl"
-                >
-                  <div className="flex items-center gap-2">
-                    <Store size={14} className="text-[#A8791E]" />
-                    <span>Sell With Us / Become a Vendor</span>
-                  </div>
-                  <span className="text-[10px] text-[#A8791E] font-bold">&rarr;</span>
-                </SafeLink>
-              )}
-
-              {/* Admin Portal */}
-              {isAuthenticated && user && user.role === 'admin' && (
-                <SafeLink
-                  to="/admin/orders"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-[#5C4010] bg-[#E2B755]/20 border border-[#C9972C]/40 px-3 py-2 rounded-xl"
-                >
-                  <span>Admin Orders Ledger</span>
-                  <Badge variant="accent" size="sm">Admin</Badge>
-                </SafeLink>
-              )}
-
-              {/* Profile or Sign In */}
-              {isAuthenticated && user ? (
-                <div className="pt-2 border-t border-[#D8C49E]/40 flex items-center justify-between">
-                  <SafeLink
-                    to={user.role === 'admin' ? '/admin/orders' : '/account'}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="flex items-center gap-2.5 hover:text-[#A8791E] transition-colors"
-                  >
-                    <span className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#E2B755] to-[#9E6E16] text-white text-xs flex items-center justify-center font-bold">
-                      {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
-                    </span>
-                    <div>
-                      <p className="text-xs font-bold text-[#241A10]">{user.name}</p>
-                      <p className="text-[10px] text-[#7C6348]">{user.email}</p>
-                    </div>
-                  </SafeLink>
+                {isAuthenticated && user ? (
                   <button
                     type="button"
                     onClick={() => {
                       logout();
                       setIsMobileMenuOpen(false);
                     }}
-                    className="text-xs text-rose-700 hover:text-rose-800 font-bold cursor-pointer"
+                    className="text-xs text-rose-700 hover:text-rose-800 font-bold flex items-center gap-1 cursor-pointer"
                   >
-                    Sign Out
+                    <LogOut size={13} />
+                    <span>Sign Out</span>
                   </button>
-                </div>
-              ) : (
-                <SafeLink
-                  to="/login"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center gap-3 text-sm font-bold text-[#382B1D] hover:text-[#A8791E] py-2"
-                >
-                  <User size={18} />
-                  <span>My Account / Sign In</span>
-                </SafeLink>
-              )}
+                ) : (
+                  <SafeLink
+                    to="/login"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="text-xs text-[#A8791E] font-bold flex items-center gap-1"
+                  >
+                    <User size={13} />
+                    <span>Sign In</span>
+                  </SafeLink>
+                )}
+              </div>
             </div>
-          </nav>
+          </div>
         </div>
       )}
     </header>

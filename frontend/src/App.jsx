@@ -106,15 +106,6 @@ function AppContent() {
     return <FullPageShimmer />;
   }
 
-  // 2. Strict Authentication Guard:
-  // Only authenticated users can enter the application.
-  // Unauthenticated visitors are automatically redirected to /login.
-  if (!isAuthenticated || !user) {
-    if (!isAuthRoute) {
-      return <Navigate to="/login" state={{ from: location }} replace />;
-    }
-  }
-
   return (
     <div className="min-h-screen bg-brand-offwhite flex flex-col">
       {/* Premium Consumer Navbar (hidden on dedicated admin & vendor dashboard SaaS suites, and auth screens) */}
@@ -123,6 +114,7 @@ function AppContent() {
       {/* Page Routing */}
       <main className="flex-1 flex flex-col">
         <Routes>
+          {/* Public Storefront Routes - Open to all patrons & visitors */}
           <Route
             path="/"
             element={
@@ -152,33 +144,69 @@ function AppContent() {
             path="/wishlist"
             element={<Wishlist />}
           />
-          <Route
-            path="/checkout"
-            element={<Checkout />}
-          />
+
+          {/* Authentication Routes - Redirect to Home if already authenticated */}
           <Route
             path="/login"
-            element={<Login />}
+            element={
+              isAuthenticated && user ? (
+                <Navigate to={user.role === 'admin' ? '/admin/orders' : user.role === 'vendor' ? '/vendor/dashboard' : '/'} replace />
+              ) : (
+                <Login />
+              )
+            }
           />
           <Route
             path="/register"
-            element={<Register />}
+            element={
+              isAuthenticated && user ? (
+                <Navigate to="/" replace />
+              ) : (
+                <Register />
+              )
+            }
+          />
+
+          {/* Protected Customer Routes - Require Signed-In Patron */}
+          <Route
+            path="/checkout"
+            element={
+              <ProtectedRoute>
+                <Checkout />
+              </ProtectedRoute>
+            }
           />
           <Route
             path="/account"
-            element={<Account />}
+            element={
+              <ProtectedRoute>
+                <Account />
+              </ProtectedRoute>
+            }
           />
           <Route
             path="/profile"
-            element={<Account />}
+            element={
+              <ProtectedRoute>
+                <Account />
+              </ProtectedRoute>
+            }
           />
           <Route
             path="/orders"
-            element={<Orders />}
+            element={
+              <ProtectedRoute>
+                <Orders />
+              </ProtectedRoute>
+            }
           />
           <Route
             path="/my-orders"
-            element={<Orders />}
+            element={
+              <ProtectedRoute>
+                <Orders />
+              </ProtectedRoute>
+            }
           />
           <Route
             path="/orders/:id/track"
