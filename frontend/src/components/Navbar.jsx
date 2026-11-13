@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate, useInRouterContext } from 'react-router-dom';
+import { Link, useNavigate, useLocation, useInRouterContext } from 'react-router-dom';
 import {
   Search,
   Heart,
@@ -60,6 +60,8 @@ function SafeLink({ to, children, className, onClick, ...props }) {
  */
 export default function Navbar({ cartCount: propCartCount }) {
   const navigate = useNavigate();
+  const location = useLocation();
+  const currentCategoryParam = new URLSearchParams(location.search).get('category') || '';
   const { cartCount: contextCartCount } = useCart();
   const { wishlistCount } = useWishlist();
   const { user, isAuthenticated, logout } = useAuth();
@@ -386,6 +388,79 @@ export default function Navbar({ cartCount: propCartCount }) {
           </div>
         </div>
       </Container>
+
+      {/* Royal Champagne Category Filtering Sub-Header (Live MongoDB API Integration) */}
+      <div className="bg-[#FAF4E8]/95 border-t border-[#D8C49E]/50 px-4 py-2 overflow-x-auto scrollbar-none shadow-2xs">
+        <Container size="default">
+          <div className="flex items-center gap-2 sm:gap-3 text-xs whitespace-nowrap">
+            {/* Quick label */}
+            <div className="hidden sm:flex items-center gap-1.5 text-[11px] font-bold text-[#8E6A2B] pr-2.5 border-r border-[#D8C49E]/60 shrink-0">
+              <Sparkles size={12} className="text-[#C9972C]" />
+              <span className="uppercase tracking-wider">Collections:</span>
+            </div>
+
+            {/* "All Pieces / Reset" Pill */}
+            <button
+              type="button"
+              onClick={() => navigate('/shop')}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs shrink-0 ${
+                !currentCategoryParam || currentCategoryParam.toLowerCase() === 'all'
+                  ? 'bg-gradient-to-r from-[#C9972C] to-[#E2B755] text-[#241A10] font-black shadow-sm border border-[#D4AF37]'
+                  : 'bg-white/70 hover:bg-white text-[#382B1D] hover:text-[#A8791E] border border-[#D8C49E]/70'
+              }`}
+            >
+              <span>All Collections</span>
+            </button>
+
+            {/* Dynamic Category Filtering Pills directly from MongoDB */}
+            {categoriesList.map((cat) => {
+              const catName = cat.name || cat;
+              const isSelected =
+                currentCategoryParam.toLowerCase() === catName.toLowerCase() ||
+                currentCategoryParam.toLowerCase() === catName.toLowerCase().replace(/\s+/g, '-');
+
+              return (
+                <button
+                  key={cat._id || cat.slug || catName}
+                  type="button"
+                  onClick={() => {
+                    if (isSelected) {
+                      navigate('/shop');
+                    } else {
+                      navigate(`/shop?category=${encodeURIComponent(catName)}`);
+                    }
+                  }}
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold transition-all cursor-pointer shadow-2xs shrink-0 ${
+                    isSelected
+                      ? 'bg-gradient-to-r from-[#C9972C] to-[#E2B755] text-[#241A10] font-black shadow-sm border border-[#D4AF37]'
+                      : 'bg-white/70 hover:bg-white text-[#382B1D] hover:text-[#A8791E] border border-[#D8C49E]/70'
+                  }`}
+                  title={`Filter products by ${catName} (${cat.productCount || 0} live pieces in database)`}
+                >
+                  <span>{catName}</span>
+                  {cat.productCount !== undefined && cat.productCount > 0 && (
+                    <span
+                      className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${
+                        isSelected
+                          ? 'bg-[#241A10] text-[#E2B755]'
+                          : 'bg-[#E5CF9F]/70 text-[#5C4215]'
+                      }`}
+                    >
+                      {cat.productCount}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+
+            {/* Right Side Luxury Courier Tag */}
+            <div className="ml-auto hidden xl:flex items-center gap-2 text-[11px] font-bold text-[#8E6A2B] shrink-0 pl-3">
+              <Zap size={12} className="text-[#A8791E] fill-amber-500" />
+              <span>Express White-Glove Dispatch Available</span>
+            </div>
+          </div>
+        </Container>
+      </div>
 
       {/* Expandable Live Search Overlay */}
       {isSearchOpen && (
