@@ -100,7 +100,7 @@ export default function Navbar({ cartCount: propCartCount }) {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-white/90 dark:bg-[#0e1015]/95 backdrop-blur-xl border-b border-amber-500/20 dark:border-amber-500/15 shadow-[0_4px_30px_rgba(0,0,0,0.03)] transition-all">
+    <header className="sticky top-0 z-50 w-full bg-gradient-to-r from-[#FAF4E8] via-[#F5E8D2] to-[#ECE0C8] border-b border-[#D4AF37]/60 shadow-[0_6px_30px_rgba(180,140,70,0.15)] transition-all">
       <Container size="default">
         <div className="flex items-center justify-between h-20">
           {/* Mobile Hamburger Button */}
@@ -108,7 +108,7 @@ export default function Navbar({ cartCount: propCartCount }) {
             <button
               type="button"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="p-2 -ml-2 text-brand-black dark:text-neutral-100 hover:text-amber-600 dark:hover:text-amber-400 transition-colors focus:outline-none cursor-pointer"
+              className="p-2 -ml-2 text-[#2D2115] hover:text-[#B4842E] transition-colors focus:outline-none cursor-pointer"
               aria-label="Toggle Navigation Menu"
             >
               {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -117,20 +117,20 @@ export default function Navbar({ cartCount: propCartCount }) {
 
           {/* Brand Logo */}
           <div className="flex items-center">
-            <SafeLink to="/" className="flex items-center gap-2.5 group">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-600 via-amber-500 to-yellow-400 p-[1.5px] shadow-sm shadow-amber-500/20 group-hover:shadow-amber-500/40 transition-all">
-                <div className="w-full h-full bg-white dark:bg-neutral-900 rounded-[10px] flex items-center justify-center">
-                  <span className="font-serif font-black text-transparent bg-clip-text bg-gradient-to-tr from-amber-600 to-yellow-500 text-lg">
+            <SafeLink to="/" className="flex items-center gap-3 group">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#E2B755] via-[#C9972C] to-[#9E6E16] p-[2px] shadow-sm shadow-[#C9972C]/30 group-hover:scale-105 transition-transform">
+                <div className="w-full h-full bg-[#FAF5EC] rounded-[10px] flex items-center justify-center">
+                  <span className="font-serif font-black text-[#A8791E] text-xl">
                     P
                   </span>
                 </div>
               </div>
               <div className="flex flex-col">
-                <span className="font-serif text-xl sm:text-2xl font-bold tracking-tight text-brand-black group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors leading-none">
+                <span className="font-serif text-2xl font-bold tracking-tight text-[#241A10] group-hover:text-[#A8791E] transition-colors leading-none">
                   Premium Store
                 </span>
-                <span className="text-[9px] uppercase tracking-[0.25em] text-amber-700/80 dark:text-amber-400/80 font-semibold mt-1">
-                  Luxury Atelier
+                <span className="text-[10px] uppercase tracking-[0.25em] text-[#8E6A2B] font-bold mt-1">
+                  Royal Luxury Atelier
                 </span>
               </div>
             </SafeLink>
@@ -140,18 +140,18 @@ export default function Navbar({ cartCount: propCartCount }) {
           <nav className="hidden md:flex items-center space-x-9">
             <SafeLink
               to="/"
-              className="text-xs uppercase tracking-widest font-semibold text-brand-charcoal hover:text-amber-600 dark:hover:text-amber-400 transition-colors py-2 relative group"
+              className="text-xs uppercase tracking-widest font-bold text-[#382B1D] hover:text-[#A8791E] transition-colors py-2 relative group"
             >
               <span>Home</span>
-              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-amber-500 to-yellow-400 transition-all duration-300 group-hover:w-full rounded-full"></span>
+              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-[#C9972C] to-[#E2B755] transition-all duration-300 group-hover:w-full rounded-full"></span>
             </SafeLink>
 
             <SafeLink
               to="/shop"
-              className="text-xs uppercase tracking-widest font-semibold text-brand-charcoal hover:text-amber-600 dark:hover:text-amber-400 transition-colors py-2 relative group"
+              className="text-xs uppercase tracking-widest font-bold text-[#382B1D] hover:text-[#A8791E] transition-colors py-2 relative group"
             >
               <span>Shop</span>
-              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-amber-500 to-yellow-400 transition-all duration-300 group-hover:w-full rounded-full"></span>
+              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-[#C9972C] to-[#E2B755] transition-all duration-300 group-hover:w-full rounded-full"></span>
             </SafeLink>
 
             {/* Categories Link with Luxury Dropdown */}
@@ -162,29 +162,29 @@ export default function Navbar({ cartCount: propCartCount }) {
             >
               <SafeLink
                 to="/categories"
-                className="flex items-center gap-1 text-xs uppercase tracking-widest font-semibold text-brand-charcoal hover:text-amber-600 dark:hover:text-amber-400 transition-colors py-2 relative group"
+                className="flex items-center gap-1 text-xs uppercase tracking-widest font-bold text-[#382B1D] hover:text-[#A8791E] transition-colors py-2 relative group"
               >
                 <span>Categories</span>
                 <ChevronDown
                   size={12}
                   className={`transition-transform duration-200 ${
-                    isCatDropdownOpen ? 'rotate-180 text-amber-500' : ''
+                    isCatDropdownOpen ? 'rotate-180 text-[#A8791E]' : ''
                   }`}
                 />
-                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-amber-500 to-yellow-400 transition-all duration-300 group-hover:w-full rounded-full"></span>
+                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-[#C9972C] to-[#E2B755] transition-all duration-300 group-hover:w-full rounded-full"></span>
               </SafeLink>
 
               {/* Dropdown Panel */}
               {isCatDropdownOpen && (
-                <div className="absolute top-full left-0 w-64 bg-white/95 dark:bg-[#15171e]/95 backdrop-blur-xl border border-amber-500/20 dark:border-amber-500/15 rounded-2xl shadow-xl py-3 px-2 z-50 animate-in fade-in slide-in-from-top-1 duration-200">
-                  <div className="px-3 py-1.5 border-b border-brand-border/40 mb-1 flex items-center justify-between">
-                    <span className="text-[10px] uppercase font-bold tracking-widest text-amber-700/80 dark:text-amber-400/80">
-                      Collections
+                <div className="absolute top-full left-0 w-64 bg-[#FAF5EB] border-2 border-[#D4AF37]/50 rounded-2xl shadow-2xl py-3 px-2 z-50 animate-in fade-in slide-in-from-top-1 duration-200">
+                  <div className="px-3 py-1.5 border-b border-[#D8C49E]/50 mb-1 flex items-center justify-between">
+                    <span className="text-[10px] uppercase font-bold tracking-widest text-[#8E6A2B]">
+                      Curated Collections
                     </span>
                     <SafeLink
                       to="/categories"
                       onClick={() => setIsCatDropdownOpen(false)}
-                      className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-0.5"
+                      className="text-[10px] font-bold text-[#A8791E] hover:underline flex items-center gap-0.5"
                     >
                       <span>View All</span>
                       <ArrowRight size={10} />
@@ -198,11 +198,11 @@ export default function Navbar({ cartCount: propCartCount }) {
                           key={cat._id || cat.slug || cat.name}
                           to={`/shop?category=${encodeURIComponent(cat.name)}`}
                           onClick={() => setIsCatDropdownOpen(false)}
-                          className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-brand-charcoal hover:text-brand-black dark:hover:text-white hover:bg-amber-500/10 transition-colors"
+                          className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-[#382B1D] hover:text-[#1F160E] hover:bg-[#EEDBB8]/60 transition-colors"
                         >
                           <span className="truncate">{cat.name}</span>
                           {cat.productCount !== undefined && cat.productCount > 0 && (
-                            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-300 font-mono">
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#E5CF9F] text-[#5C4215] font-mono font-bold">
                               {cat.productCount}
                             </span>
                           )}
@@ -214,7 +214,7 @@ export default function Navbar({ cartCount: propCartCount }) {
                           key={c}
                           to={`/shop?category=${encodeURIComponent(c)}`}
                           onClick={() => setIsCatDropdownOpen(false)}
-                          className="block px-3 py-2 rounded-xl text-xs font-medium text-brand-charcoal hover:text-brand-black dark:hover:text-white hover:bg-amber-500/10 transition-colors"
+                          className="block px-3 py-2 rounded-xl text-xs font-semibold text-[#382B1D] hover:text-[#1F160E] hover:bg-[#EEDBB8]/60 transition-colors"
                         >
                           {c}
                         </SafeLink>
@@ -228,18 +228,18 @@ export default function Navbar({ cartCount: propCartCount }) {
             {isAuthenticated && user?.role === 'vendor' ? (
               <SafeLink
                 to="/vendor/dashboard"
-                className="text-xs uppercase tracking-widest font-bold text-emerald-800 dark:text-emerald-400 hover:text-emerald-950 dark:hover:text-emerald-300 transition-colors py-2 relative group"
+                className="text-xs uppercase tracking-widest font-bold text-emerald-800 hover:text-emerald-950 transition-colors py-2 relative group"
               >
                 <span>Vendor Portal</span>
-                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-emerald-600 dark:bg-emerald-400 transition-all duration-300 group-hover:w-full"></span>
+                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-emerald-600 transition-all duration-300 group-hover:w-full"></span>
               </SafeLink>
             ) : (
               <SafeLink
                 to="/vendor/register"
-                className="text-xs uppercase tracking-widest font-medium text-brand-charcoal hover:text-amber-600 dark:hover:text-amber-400 transition-colors py-2 relative group"
+                className="text-xs uppercase tracking-widest font-bold text-[#382B1D] hover:text-[#A8791E] transition-colors py-2 relative group"
               >
                 <span>Sell With Us</span>
-                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-amber-500 to-yellow-400 transition-all duration-300 group-hover:w-full rounded-full"></span>
+                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-[#C9972C] to-[#E2B755] transition-all duration-300 group-hover:w-full rounded-full"></span>
               </SafeLink>
             )}
           </nav>
@@ -250,7 +250,7 @@ export default function Navbar({ cartCount: propCartCount }) {
             <button
               type="button"
               onClick={() => setIsSearchOpen(!isSearchOpen)}
-              className="p-2.5 text-brand-charcoal hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-500/10 rounded-xl transition-all focus:outline-none cursor-pointer"
+              className="p-2.5 text-[#382B1D] hover:text-[#8E6A2B] hover:bg-[#E7D4B0]/60 rounded-xl transition-all focus:outline-none cursor-pointer"
               aria-label="Search"
               title="Search"
             >
@@ -261,27 +261,27 @@ export default function Navbar({ cartCount: propCartCount }) {
             <button
               type="button"
               onClick={toggleTheme}
-              className="p-2.5 text-brand-charcoal hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-500/10 rounded-xl transition-all duration-300 focus:outline-none cursor-pointer relative group"
+              className="p-2.5 text-[#382B1D] hover:text-[#8E6A2B] hover:bg-[#E7D4B0]/60 rounded-xl transition-all duration-300 focus:outline-none cursor-pointer relative group"
               aria-label={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
               title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
             >
               {isDark ? (
-                <Sun size={19} className="text-amber-400 group-hover:rotate-45 transition-transform duration-300 drop-shadow-[0_0_8px_rgba(251,191,36,0.5)]" />
+                <Sun size={19} className="text-[#C9972C] group-hover:rotate-45 transition-transform duration-300 drop-shadow-[0_0_8px_rgba(201,151,44,0.6)]" />
               ) : (
-                <Moon size={19} className="text-brand-charcoal group-hover:-rotate-12 transition-transform duration-300" />
+                <Moon size={19} className="text-[#382B1D] group-hover:-rotate-12 transition-transform duration-300" />
               )}
             </button>
 
             {/* Wishlist Icon */}
             <SafeLink
               to="/wishlist"
-              className="p-2.5 text-brand-charcoal hover:text-rose-600 hover:bg-rose-500/10 rounded-xl transition-all hidden sm:inline-flex relative items-center focus:outline-none"
+              className="p-2.5 text-[#382B1D] hover:text-rose-600 hover:bg-[#E7D4B0]/60 rounded-xl transition-all hidden sm:inline-flex relative items-center focus:outline-none"
               aria-label="Wishlist"
               title="Wishlist"
             >
               <Heart size={19} />
               {wishlistCount > 0 && (
-                <span className="absolute 1 top-1 right-1 min-w-[18px] h-[18px] flex items-center justify-center text-[10px] font-bold bg-gradient-to-r from-rose-500 to-pink-500 text-white rounded-full shadow-xs px-1">
+                <span className="absolute top-1 right-1 min-w-[18px] h-[18px] flex items-center justify-center text-[10px] font-bold bg-gradient-to-r from-rose-500 to-pink-500 text-white rounded-full shadow-xs px-1">
                   {wishlistCount}
                 </span>
               )}
@@ -290,13 +290,13 @@ export default function Navbar({ cartCount: propCartCount }) {
             {/* Shopping Cart Icon with Badge */}
             <SafeLink
               to="/cart"
-              className="p-2.5 text-brand-charcoal hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-500/10 rounded-xl transition-all relative inline-flex items-center focus:outline-none"
+              className="p-2.5 text-[#382B1D] hover:text-[#8E6A2B] hover:bg-[#E7D4B0]/60 rounded-xl transition-all relative inline-flex items-center focus:outline-none"
               aria-label="Shopping Cart"
               title="Shopping Cart"
             >
               <ShoppingBag size={20} />
               {cartCount > 0 && (
-                <span className="absolute top-1 right-1 min-w-[18px] h-[18px] flex items-center justify-center text-[10px] font-bold bg-gradient-to-r from-amber-500 to-yellow-500 text-white rounded-full shadow-xs px-1">
+                <span className="absolute top-1 right-1 min-w-[18px] h-[18px] flex items-center justify-center text-[10px] font-bold bg-gradient-to-r from-[#B47C1E] to-[#E2A638] text-white rounded-full shadow-xs px-1">
                   {cartCount}
                 </span>
               )}
@@ -308,7 +308,7 @@ export default function Navbar({ cartCount: propCartCount }) {
                 {user.role === 'admin' && (
                   <SafeLink
                     to="/admin/orders"
-                    className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/40 hover:bg-amber-500/25 text-[11px] font-bold text-amber-800 dark:text-amber-300 transition-colors shadow-2xs"
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#E2B755]/20 border border-[#C9972C]/40 hover:bg-[#E2B755]/30 text-[11px] font-bold text-[#5C4010] transition-colors shadow-2xs"
                     title="Open Admin Orders Ledger"
                   >
                     <span>Admin Panel</span>
@@ -317,7 +317,7 @@ export default function Navbar({ cartCount: propCartCount }) {
                 {user.role === 'vendor' && (
                   <SafeLink
                     to="/vendor/dashboard"
-                    className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/40 hover:bg-emerald-500/25 text-[11px] font-bold text-emerald-800 dark:text-emerald-300 transition-colors shadow-2xs"
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-500/20 border border-emerald-600/40 hover:bg-emerald-500/30 text-[11px] font-bold text-emerald-900 transition-colors shadow-2xs"
                     title="Open Merchant Portal"
                   >
                     <span>Vendor Portal</span>
@@ -326,7 +326,7 @@ export default function Navbar({ cartCount: propCartCount }) {
                 {user.role === 'delivery_boy' && (
                   <SafeLink
                     to="/delivery/dashboard"
-                    className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/40 hover:bg-amber-500/25 text-[11px] font-bold text-amber-800 dark:text-amber-300 transition-colors shadow-2xs"
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#E2B755]/20 border border-[#C9972C]/40 hover:bg-[#E2B755]/30 text-[11px] font-bold text-[#5C4010] transition-colors shadow-2xs"
                     title="Open Delivery Dispatch Portal"
                   >
                     <span>Rider Portal</span>
@@ -334,18 +334,18 @@ export default function Navbar({ cartCount: propCartCount }) {
                 )}
                 <SafeLink
                   to="/orders"
-                  className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 text-xs font-semibold text-amber-900 dark:text-amber-300 transition-all shadow-2xs"
+                  className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/70 hover:bg-white border border-[#D4AF37]/50 text-xs font-bold text-[#382B1D] transition-all shadow-2xs"
                   title="View and track your orders"
                 >
-                  <PackageCheck size={14} className="text-amber-600 dark:text-amber-400" />
+                  <PackageCheck size={14} className="text-[#A8791E]" />
                   <span>My Orders</span>
                 </SafeLink>
                 <SafeLink
                   to={user.role === 'admin' ? '/admin/orders' : user.role === 'vendor' ? '/vendor/dashboard' : user.role === 'delivery_boy' ? '/delivery/dashboard' : '/account'}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500/15 via-brand-cream/70 to-amber-500/10 hover:from-amber-500/25 hover:to-amber-500/20 border border-amber-500/30 text-xs font-bold text-brand-black dark:text-white transition-all shadow-2xs"
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/80 hover:bg-white border border-[#D4AF37]/60 text-xs font-bold text-[#241A10] transition-all shadow-xs"
                   title={`Logged in as ${user.name} • View Account`}
                 >
-                  <span className="w-6 h-6 rounded-lg bg-gradient-to-br from-amber-500 to-amber-700 text-white text-[11px] flex items-center justify-center font-bold shadow-xs">
+                  <span className="w-6 h-6 rounded-lg bg-gradient-to-br from-[#E2B755] to-[#9E6E16] text-white text-[11px] flex items-center justify-center font-bold shadow-xs">
                     {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
                   </span>
                   <span className="max-w-[85px] truncate">{user.name.split(' ')[0]}</span>
@@ -353,7 +353,7 @@ export default function Navbar({ cartCount: propCartCount }) {
                 <button
                   type="button"
                   onClick={logout}
-                  className="p-2 text-brand-muted hover:text-rose-600 hover:bg-rose-500/10 rounded-xl transition-colors cursor-pointer focus:outline-none"
+                  className="p-2 text-[#7C6348] hover:text-rose-600 hover:bg-rose-500/10 rounded-xl transition-colors cursor-pointer focus:outline-none"
                   title="Sign Out"
                   aria-label="Sign Out"
                 >
@@ -363,11 +363,11 @@ export default function Navbar({ cartCount: propCartCount }) {
             ) : (
               <SafeLink
                 to="/login"
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white text-xs font-semibold shadow-xs shadow-amber-500/20 transition-all"
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-[#C9972C] via-[#DDB04E] to-[#B47C1E] hover:from-[#B47C1E] hover:to-[#9E6E16] text-[#241A10] font-bold text-xs shadow-md shadow-[#C9972C]/30 transition-all border border-[#F3DE9D]"
                 aria-label="Account / Sign In"
                 title="Account / Sign In"
               >
-                <User size={15} />
+                <User size={15} className="text-[#241A10]" />
                 <span>Sign In</span>
               </SafeLink>
             )}

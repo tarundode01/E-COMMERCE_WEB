@@ -217,19 +217,19 @@ export default function Account() {
         </nav>
 
         {/* Header Summary Banner */}
-        <div className="bg-gradient-to-r from-amber-500/10 via-brand-surface to-brand-surface dark:from-amber-950/30 dark:via-[#14161D] dark:to-[#14161D] border border-amber-500/30 dark:border-amber-500/20 rounded-3xl p-6 sm:p-8 mb-8 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden backdrop-blur-md">
+        <div className="bg-gradient-to-r from-[#FAF4E8] via-[#F5E8D2] to-[#ECE0C8] border-2 border-[#D4AF37]/60 rounded-3xl p-6 sm:p-8 mb-8 shadow-md shadow-[#C9972C]/10 flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden backdrop-blur-md">
           {/* Subtle gold glow in background */}
-          <div className="absolute top-0 right-0 w-72 h-72 bg-gradient-to-bl from-amber-500/10 via-yellow-500/5 to-transparent rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute top-0 right-0 w-72 h-72 bg-gradient-to-bl from-[#C9972C]/20 via-[#E2B755]/10 to-transparent rounded-full blur-3xl pointer-events-none" />
 
           <div className="flex items-center gap-4 sm:gap-6 relative z-10">
             {/* Avatar Badge with Gold Gradient Ring */}
             <div className="relative shrink-0">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-tr from-amber-500 via-amber-600 to-yellow-400 p-[2px] shadow-md shadow-amber-500/20">
-                <div className="w-full h-full bg-brand-surface dark:bg-neutral-900 rounded-[14px] flex items-center justify-center font-serif text-2xl sm:text-3xl font-bold text-brand-black dark:text-amber-400">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-tr from-[#E2B755] via-[#C9972C] to-[#9E6E16] p-[2px] shadow-md shadow-[#C9972C]/30">
+                <div className="w-full h-full bg-[#FAF5EB] rounded-[14px] flex items-center justify-center font-serif text-2xl sm:text-3xl font-black text-[#A8791E]">
                   {initials}
                 </div>
               </div>
-              <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-emerald-500 border-2 border-brand-surface dark:border-neutral-900 flex items-center justify-center text-white shadow-xs" title="Verified Member">
+              <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-emerald-600 border-2 border-[#FAF5EB] flex items-center justify-center text-white shadow-xs" title="Verified Member">
                 <ShieldCheck size={13} />
               </div>
             </div>
@@ -237,27 +237,27 @@ export default function Account() {
             {/* Client Identity Details */}
             <div>
               <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                <span className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/15 text-amber-900 dark:text-amber-300 border border-amber-500/30 shadow-2xs">
-                  <Sparkles size={11} className="text-amber-600 dark:text-amber-400" />
+                <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[11px] font-bold bg-[#E2B755]/25 text-[#5C4010] border border-[#C9972C]/40 shadow-2xs">
+                  <Sparkles size={11} className="text-[#A8791E]" />
                   <span>{user.role === 'admin' ? 'Store Administrator' : 'Privileged VIP Client'}</span>
                 </span>
-                <span className="text-[11px] text-brand-muted hidden sm:inline">
+                <span className="text-[11px] text-[#7C6348] font-medium hidden sm:inline">
                   Member since {formattedMemberDate}
                 </span>
               </div>
-              <h1 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-brand-black">
+              <h1 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-[#241A10]">
                 {user.name}
               </h1>
-              <p className="text-xs sm:text-sm text-brand-muted mt-0.5">{user.email}</p>
+              <p className="text-xs sm:text-sm text-[#7C6348] font-medium mt-0.5">{user.email}</p>
             </div>
           </div>
 
           {/* Quick Stats & Sign Out */}
-          <div className="flex flex-wrap items-center gap-3 border-t md:border-t-0 pt-4 md:pt-0 border-brand-border/50 relative z-10">
+          <div className="flex flex-wrap items-center gap-3 border-t md:border-t-0 pt-4 md:pt-0 border-[#D8C49E]/60 relative z-10">
             {user.role === 'admin' && (
               <Link
                 to="/admin/orders"
-                className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-amber-500/15 border border-amber-500/40 text-xs font-bold text-amber-800 dark:text-amber-300 hover:bg-amber-500/25 transition-all shadow-2xs"
+                className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#E2B755]/20 border border-[#C9972C]/40 text-xs font-bold text-[#5C4010] hover:bg-[#E2B755]/30 transition-all shadow-2xs"
               >
                 <PackageCheck size={15} />
                 <span>Admin Orders Ledger</span>
@@ -266,7 +266,7 @@ export default function Account() {
 
             <Link
               to="/wishlist"
-              className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-brand-surface/90 border border-brand-border/80 text-xs font-semibold text-brand-charcoal hover:border-amber-500/50 hover:bg-amber-500/5 transition-all shadow-2xs"
+              className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/80 border border-[#D4AF37]/50 text-xs font-bold text-[#382B1D] hover:border-[#A8791E] hover:bg-white transition-all shadow-2xs"
             >
               <Heart size={15} className="text-rose-500 fill-rose-500" />
               <span>Wishlist ({wishlistCount})</span>
@@ -274,16 +274,16 @@ export default function Account() {
 
             <Link
               to="/cart"
-              className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-brand-surface/90 border border-brand-border/80 text-xs font-semibold text-brand-charcoal hover:border-amber-500/50 hover:bg-amber-500/5 transition-all shadow-2xs"
+              className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/80 border border-[#D4AF37]/50 text-xs font-bold text-[#382B1D] hover:border-[#A8791E] hover:bg-white transition-all shadow-2xs"
             >
-              <ShoppingBag size={15} className="text-amber-600 dark:text-amber-400" />
+              <ShoppingBag size={15} className="text-[#A8791E]" />
               <span>Bag ({cartCount})</span>
             </Link>
 
             <button
               type="button"
               onClick={logout}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-rose-500/10 border border-rose-500/30 text-xs font-semibold text-rose-700 dark:text-rose-400 hover:bg-rose-500/20 transition-all cursor-pointer focus:outline-none"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-rose-500/15 border border-rose-400/40 text-xs font-bold text-rose-800 hover:bg-rose-500/25 transition-all cursor-pointer focus:outline-none"
               title="Sign Out of Account"
             >
               <LogOut size={14} />
