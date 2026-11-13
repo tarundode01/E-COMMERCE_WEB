@@ -475,4 +475,35 @@ html {
   animation: luxurySparkle 3s infinite ease-in-out;
 }
 
+@keyframes starTwinkle {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 1px rgba(251, 191, 36, 0.5));
+  }
+  50% {
+    transform: scale(1.15);
+    filter: drop-shadow(0 0 5px rgba(251, 191, 36, 0.9));
+  }
+}
+
+@keyframes luxuryFadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: luxuryFadeInUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.star-twinkle:hover {
+  animation: starTwinkle 1.4s infinite ease-in-out;
+}
+
+
 

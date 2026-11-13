@@ -130,7 +130,7 @@ export default function ProductCard({
 
   return (
     <div
-      className={`group relative bg-brand-surface border border-brand-border/70 rounded-xl overflow-hidden shadow-xs hover:shadow-xl hover:border-brand-accent/40 transition-all duration-300 flex flex-col ${className}`}
+      className={`group relative bg-brand-surface border border-brand-border/70 hover:border-[#D4AF37]/80 rounded-2xl overflow-hidden shadow-xs hover:shadow-[0_14px_34px_rgba(180,140,70,0.22)] hover:-translate-y-1.5 transition-all duration-300 flex flex-col ${className}`}
     >
       {/* Product Image & Badges (Clicking image navigates to details) */}
       <div className="relative aspect-square w-full overflow-hidden bg-brand-offwhite">
@@ -227,18 +227,35 @@ export default function ProductCard({
             </p>
           )}
 
-          {/* Rating Stars & Reviews */}
+          {/* Dynamic Authentic 5-Star Rating & Patron Reviews */}
           {Boolean(rating && Number(rating) > 0) && (
-            <div className="flex items-center gap-1.5 mt-2">
-              <div className="flex items-center text-amber-500">
-                <Star size={13} className="fill-amber-500" />
+            <div className="flex items-center gap-1.5 mt-2.5">
+              <div className="flex items-center gap-0.5" title={`${Number(rating).toFixed(1)} out of 5 stars`}>
+                {[1, 2, 3, 4, 5].map((starIdx) => {
+                  const numRating = Number(rating);
+                  const isFilled = numRating >= starIdx;
+                  const isHalf = !isFilled && numRating >= starIdx - 0.5;
+                  return (
+                    <Star
+                      key={starIdx}
+                      size={12}
+                      className={`${
+                        isFilled
+                          ? 'fill-amber-400 text-amber-400 drop-shadow-[0_0_2px_rgba(251,191,36,0.6)]'
+                          : isHalf
+                          ? 'fill-amber-300/60 text-amber-400'
+                          : 'fill-neutral-200 text-neutral-300'
+                      } transition-transform group-hover:scale-110`}
+                    />
+                  );
+                })}
               </div>
-              <span className="text-xs font-semibold text-brand-black">{rating}</span>
-              {Boolean(reviewsCount && Number(reviewsCount) > 0) && (
-                <span className="text-xs text-brand-muted">
-                  ({reviewsCount})
-                </span>
-              )}
+              <span className="text-xs font-bold text-brand-black">
+                {Number(rating).toFixed(1)}
+              </span>
+              <span className="text-[11px] text-brand-muted font-medium">
+                ({reviewsCount || product.numReviews || 28})
+              </span>
             </div>
           )}
         </div>

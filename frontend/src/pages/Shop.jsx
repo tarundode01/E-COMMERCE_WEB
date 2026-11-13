@@ -651,6 +651,40 @@ export default function Shop({ onAddToCart, onToggleWishlist }) {
           </div>
         </div>
 
+        {/* Quick Star Rating Filter Bar with Animated Gold Shine */}
+        <div className="bg-brand-surface border border-brand-border/70 px-4 py-3 rounded-2xl shadow-xs mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 overflow-x-auto scrollbar-none">
+          <div className="flex items-center gap-2 text-xs shrink-0 font-bold text-brand-charcoal">
+            <Star size={14} className="fill-amber-400 text-amber-500 animate-pulse" />
+            <span className="uppercase tracking-wider text-[11px] text-brand-muted">Filter by Patron Rating:</span>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 text-xs shrink-0">
+            {[
+              { val: 0, label: 'All Ratings' },
+              { val: 5.0, label: '★ 5.0 Masterpieces' },
+              { val: 4.8, label: '★ 4.8 & Up' },
+              { val: 4.5, label: '★ 4.5 & Up' },
+              { val: 4.0, label: '★ 4.0 & Up' },
+            ].map((rOpt) => {
+              const isSelected = minRating === rOpt.val;
+              return (
+                <button
+                  key={rOpt.val}
+                  type="button"
+                  onClick={() => handleRatingSelect(isSelected && rOpt.val !== 0 ? 0 : rOpt.val)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs hover:-translate-y-0.5 ${
+                    isSelected
+                      ? 'bg-gradient-to-r from-[#C9972C] to-[#E2B755] text-[#241A10] font-black shadow-md border border-[#D4AF37] ring-2 ring-[#C9972C]/40 animate-gold-glow'
+                      : 'bg-brand-offwhite hover:bg-white text-brand-charcoal hover:text-[#A8791E] border border-brand-border/80 hover:shadow-xs'
+                  }`}
+                >
+                  {rOpt.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Main Content Layout: Sidebar Filters (3 Cols) + Products Grid (9 Cols) */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Desktop & Collapsible Mobile Filter Sidebar */}
@@ -872,6 +906,7 @@ export default function Shop({ onAddToCart, onToggleWishlist }) {
               <div className="space-y-1">
                 {[
                   { rating: 0, label: 'All Ratings' },
+                  { rating: 5.0, label: '5.0 Stars (Masterpieces)' },
                   { rating: 4.8, label: '4.8 Stars & Up' },
                   { rating: 4.7, label: '4.7 Stars & Up' },
                   { rating: 4.5, label: '4.5 Stars & Up' },
