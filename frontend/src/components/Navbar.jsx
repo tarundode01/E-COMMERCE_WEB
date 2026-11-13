@@ -132,24 +132,23 @@ export default function Navbar({ cartCount: propCartCount }) {
 
   return (
     <header className="royal-customer-header sticky top-0 z-50 w-full bg-gradient-to-r from-[#FAF4E8] via-[#F5E8D2] to-[#ECE0C8] border-b border-[#D4AF37]/60 shadow-[0_6px_30px_rgba(180,140,70,0.15)] transition-all">
-      <Container size="default">
+      <Container size="default" className="!px-3 sm:!px-6">
         <div className="flex items-center justify-between h-16 sm:h-20 gap-2">
-          {/* Mobile Hamburger Button */}
-          <div className="flex items-center md:hidden shrink-0">
+          {/* Left: Mobile Hamburger & Brand Logo (Grouped together so "Premium Store" is never overridden or squished) */}
+          <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 shrink-0">
+            {/* Mobile Hamburger Button */}
             <button
               type="button"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="p-2 text-[#2D2115] hover:text-[#B4842E] transition-colors focus:outline-none cursor-pointer rounded-xl hover:bg-[#E7D4B0]/50"
+              className="p-2 -ml-1 text-[#2D2115] hover:text-[#B4842E] transition-colors focus:outline-none cursor-pointer rounded-xl hover:bg-[#E7D4B0]/50 md:hidden shrink-0"
               aria-label="Toggle Navigation Menu"
             >
               {isMobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
             </button>
-          </div>
 
-          {/* Brand Logo with 3D Hover & Gold Shadow (Fully Mobile-Responsive) */}
-          <div className="flex items-center min-w-0">
-            <SafeLink to="/" className="flex items-center gap-2 sm:gap-3 group">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-[#E2B755] via-[#C9972C] to-[#9E6E16] p-[2px] shadow-sm shadow-[#C9972C]/30 group-hover:scale-105 group-hover:shadow-[0_0_18px_rgba(201,151,44,0.5)] transition-all duration-300 shrink-0">
+            {/* Brand Logo with 3D Hover & Gold Shadow (Attractive & Crisp) */}
+            <SafeLink to="/" className="flex items-center gap-2 sm:gap-2.5 group shrink-0">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-[#E2B755] via-[#C9972C] to-[#9E6E16] p-[2px] shadow-sm shadow-[#C9972C]/40 group-hover:scale-105 group-hover:shadow-[0_0_18px_rgba(201,151,44,0.5)] transition-all duration-300 shrink-0">
                 <div className="w-full h-full bg-[#FAF5EC] rounded-[10px] flex items-center justify-center">
                   <span className="font-serif font-black text-[#A8791E] text-base sm:text-xl group-hover:scale-110 transition-transform">
                     P
@@ -157,10 +156,13 @@ export default function Navbar({ cartCount: propCartCount }) {
                 </div>
               </div>
               <div className="flex flex-col min-w-0">
-                <span className="font-serif text-base sm:text-2xl font-bold tracking-tight text-[#241A10] group-hover:text-[#A8791E] transition-colors leading-none truncate">
-                  Premium Store
-                </span>
-                <span className="hidden xs:inline-block text-[8px] sm:text-[9px] uppercase tracking-[0.2em] sm:tracking-[0.25em] text-[#8E6A2B] font-bold mt-1 truncate">
+                <div className="flex items-center gap-1.5">
+                  <span className="font-serif text-base sm:text-xl md:text-2xl font-black tracking-tight text-[#1F160E] group-hover:text-[#A8791E] transition-colors leading-none whitespace-nowrap drop-shadow-2xs">
+                    Premium Store
+                  </span>
+                  <span className="hidden sm:inline-block w-1.5 h-1.5 rounded-full bg-[#C9972C] animate-pulse shrink-0" />
+                </div>
+                <span className="text-[8px] sm:text-[9px] uppercase tracking-[0.2em] text-[#8E6A2B] font-bold mt-0.5 whitespace-nowrap hidden xs:inline-block">
                   Royal Luxury Atelier
                 </span>
               </div>
@@ -329,23 +331,23 @@ export default function Navbar({ cartCount: propCartCount }) {
           </nav>
 
           {/* Action Icons (Search, Theme Toggle, Wishlist, Cart, Orders, User Menu) */}
-          <div className="flex items-center space-x-2 sm:space-x-3">
+          <div className="flex items-center space-x-1 sm:space-x-3 shrink-0">
             {/* Search Icon / Toggle */}
             <button
               type="button"
               onClick={() => setIsSearchOpen(!isSearchOpen)}
-              className="p-2.5 text-[#382B1D] hover:text-[#8E6A2B] hover:bg-[#E7D4B0]/60 rounded-xl transition-all hover:scale-105 focus:outline-none cursor-pointer"
+              className="p-2 sm:p-2.5 text-[#382B1D] hover:text-[#8E6A2B] hover:bg-[#E7D4B0]/60 rounded-xl transition-all hover:scale-105 focus:outline-none cursor-pointer"
               aria-label="Search"
               title="Search luxury collections"
             >
-              <Search size={19} />
+              <Search size={18} className="sm:w-[19px] sm:h-[19px]" />
             </button>
 
-            {/* Dark/Light Mode Toggle with Smooth Rotate Animation */}
+            {/* Dark/Light Mode Toggle with Smooth Rotate Animation (Desktop; also in mobile drawer) */}
             <button
               type="button"
               onClick={toggleTheme}
-              className="p-2.5 text-[#382B1D] hover:text-[#8E6A2B] hover:bg-[#E7D4B0]/60 rounded-xl transition-all duration-300 focus:outline-none cursor-pointer relative group"
+              className="p-2.5 text-[#382B1D] hover:text-[#8E6A2B] hover:bg-[#E7D4B0]/60 rounded-xl transition-all duration-300 focus:outline-none cursor-pointer relative group hidden sm:inline-flex"
               aria-label={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
               title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
             >
