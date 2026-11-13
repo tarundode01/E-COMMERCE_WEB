@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useInRouterContext } from 'react-router-dom';
 import {
   Globe,
@@ -6,11 +6,16 @@ import {
   Share2,
   Send,
   Mail,
-  ArrowUpRight
+  ArrowUpRight,
+  Check,
+  Loader2,
+  AlertCircle,
+  Sparkles,
 } from 'lucide-react';
 import Container from './Container';
 import Input from './Input';
 import Button from './Button';
+import { newsletterService } from '../services/api';
 
 /**
  * SafeLink helper: Uses React Router's <Link> if running within a Router context,
@@ -48,6 +53,49 @@ const CURRENT_YEAR = new Date().getFullYear();
  * - Copyright with current year
  */
 export default function Footer() {
+  const [newsletterEmail, setNewsletterEmail] = useState('');
+  const [newsletterStatus, setNewsletterStatus] = useState('idle'); // 'idle' | 'loading' | 'success' | 'error'
+  const [feedbackMessage, setFeedbackMessage] = useState('');
+
+  const handleSubscribe = async (e) => {
+    e.preventDefault();
+    const emailToSubmit = newsletterEmail.trim();
+
+    if (!emailToSubmit) {
+      setNewsletterStatus('error');
+      setFeedbackMessage('Please enter an email address.');
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(emailToSubmit)) {
+      setNewsletterStatus('error');
+      setFeedbackMessage('Please enter a valid email format (e.g. name@domain.com).');
+      return;
+    }
+
+    setNewsletterStatus('loading');
+    setFeedbackMessage('');
+
+    try {
+      const res = await newsletterService.subscribe(emailToSubmit);
+      if (res && res.success) {
+        setNewsletterStatus('success');
+        setFeedbackMessage(res.message || 'Welcome to our Private Atelier! Your VIP newsletter subscription is confirmed.');
+        setNewsletterEmail('');
+      } else {
+        throw new Error(res?.message || 'Unable to subscribe.');
+      }
+    } catch (err) {
+      setNewsletterStatus('error');
+      setFeedbackMessage(
+        err.customMessage ||
+          err.response?.data?.message ||
+          err.message ||
+          'Unable to process subscription right now.'
+      );
+    }
+  };
 
   const quickLinks = [
     { name: 'Home', to: '/' },
@@ -154,18 +202,28 @@ export default function Footer() {
 
           {/* Newsletter Subscription (Col 9 to 12) */}
           <div className="lg:col-span-4 flex flex-col space-y-3">
-            <h3 className="text-xs uppercase tracking-widest font-semibold text-white">
-              Privilege Newsletter
-            </h3>
+            <div className="flex items-center gap-1.5">
+              <Sparkles size={13} className="text-brand-accent" />
+              <h3 className="text-xs uppercase tracking-widest font-semibold text-white">
+                Privilege Newsletter
+              </h3>
+            </div>
             <p className="text-xs text-neutral-400 leading-relaxed">
-              Subscribe to receive private collection previews, editorial features, and exclusive access.
+              Subscribe to receive private collection previews, editorial features, and exclusive VIP access.
             </p>
-            <form onSubmit={(e) => e.preventDefault()} className="flex flex-col sm:flex-row gap-2 pt-1">
+
+            <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row gap-2 pt-1">
               <div className="flex-1">
                 <Input
                   type="email"
+                  value={newsletterEmail}
+                  onChange={(e) => {
+                    setNewsletterEmail(e.target.value);
+                    if (newsletterStatus === 'error') setNewsletterStatus('idle');
+                  }}
                   placeholder="Enter your email address"
                   className="!bg-white/5 !text-white !border-white/15 placeholder:!text-neutral-500 focus:!border-brand-accent focus:!ring-brand-accent !py-2 text-xs"
+                  disabled={newsletterStatus === 'loading'}
                   required
                 />
               </div>
@@ -173,11 +231,34 @@ export default function Footer() {
                 type="submit"
                 variant="accent"
                 size="sm"
-                className="shrink-0"
+                className="shrink-0 flex items-center justify-center gap-1.5 cursor-pointer"
+                disabled={newsletterStatus === 'loading'}
               >
-                Subscribe
+                {newsletterStatus === 'loading' ? (
+                  <>
+                    <Loader2 size={13} className="animate-spin" />
+                    <span>Subscribing...</span>
+                  </>
+                ) : (
+                  <span>Subscribe</span>
+                )}
               </Button>
             </form>
+
+            {/* Live Feedback Messages */}
+            {newsletterStatus === 'success' && (
+              <div className="p-3 rounded-xl bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 text-xs flex items-start gap-2 animate-in fade-in duration-200">
+                <Check size={15} className="text-emerald-400 shrink-0 mt-0.5" />
+                <span className="font-medium leading-relaxed">{feedbackMessage}</span>
+              </div>
+            )}
+
+            {newsletterStatus === 'error' && (
+              <div className="p-3 rounded-xl bg-rose-500/15 border border-rose-500/40 text-rose-300 text-xs flex items-start gap-2 animate-in fade-in duration-200">
+                <AlertCircle size={15} className="text-rose-400 shrink-0 mt-0.5" />
+                <span className="font-medium leading-relaxed">{feedbackMessage}</span>
+              </div>
+            )}
           </div>
         </div>
 

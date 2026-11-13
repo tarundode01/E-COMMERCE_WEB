@@ -723,6 +723,15 @@ export const deliveryBoyService = {
   rejectOrder: vendorDeliveryService.rejectAssignedOrder,
 };
 
+// Newsletter Subscription Service
+export const newsletterService = {
+  // POST /api/newsletter/subscribe
+  subscribe: async (email) => {
+    const response = await api.post('/api/newsletter/subscribe', { email });
+    return response.data;
+  },
+};
+
 export default api;
 
 

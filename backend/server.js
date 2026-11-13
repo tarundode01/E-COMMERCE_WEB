@@ -15,6 +15,7 @@ import reviewRoutes from './routes/reviewRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
 import vendorRoutes from './routes/vendorRoutes.js';
 import adminVendorRoutes from './routes/adminVendorRoutes.js';
+import newsletterRoutes from './routes/newsletterRoutes.js';
 import { getPublicStoreBySlug } from './controllers/vendorController.js';
 import StoreSettings from './models/StoreSettings.js';
 
@@ -163,6 +164,9 @@ app.use('/api/vendor', vendorRoutes);
 
 // Public Storefront Atelier Profile Route
 app.get('/api/stores/:slug', getPublicStoreBySlug);
+
+// Newsletter Subscription Route
+app.use('/api/newsletter', newsletterRoutes);
 
 // Admin Dedicated Vendor Application Review Routes (Phase 3 SaaS functionality)
 app.use('/api/admin/vendors', adminVendorRoutes);
