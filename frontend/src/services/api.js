@@ -1,8 +1,12 @@
 import axios from 'axios';
 import { products as localFallbackProducts, fallbackCategories } from '../data/products';
 
-// Read backend API base URL from Vite environment variable
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+// Read backend API base URL from Vite environment variable, with production live fallback
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL ||
+  (import.meta.env.PROD
+    ? 'https://e-commerce-web-azure-nine.vercel.app'
+    : 'http://localhost:5000');
 
 const api = axios.create({
   baseURL: API_BASE_URL,

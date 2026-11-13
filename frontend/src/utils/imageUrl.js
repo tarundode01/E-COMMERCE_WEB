@@ -12,7 +12,11 @@ export const formatImageUrl = (url) => {
   if (url.startsWith('/assets/') || url.includes('/assets/')) {
     return url;
   }
-  const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+  const baseUrl =
+    import.meta.env.VITE_API_URL ||
+    (import.meta.env.PROD
+      ? 'https://e-commerce-web-azure-nine.vercel.app'
+      : 'http://localhost:5000');
   return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
 };
 
