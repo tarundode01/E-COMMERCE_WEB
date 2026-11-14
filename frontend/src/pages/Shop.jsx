@@ -351,10 +351,11 @@ export default function Shop({ onAddToCart, onToggleWishlist }) {
     fetchProducts();
   }, [fetchProducts]);
 
-  // Handler for changing page with smooth scroll to products top
+  // Handler for changing page with smooth scroll to top of page
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= totalPages && newPage !== currentPage) {
       setCurrentPage(newPage);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       if (productsTopRef.current) {
         productsTopRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }

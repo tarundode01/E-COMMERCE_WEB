@@ -40,6 +40,7 @@ import { WishlistProvider } from './context/WishlistContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { FullPageShimmer } from './components/ShimmerLoader';
+import ScrollToTop from './components/ScrollToTop';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -108,6 +109,9 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-brand-offwhite flex flex-col">
+      {/* Scroll to Top on every route change so new page always opens from the header */}
+      <ScrollToTop />
+
       {/* Premium Consumer Navbar (hidden on dedicated admin & vendor dashboard SaaS suites, and auth screens) */}
       {!isDedicatedSaaSRoute && <Navbar />}
 
