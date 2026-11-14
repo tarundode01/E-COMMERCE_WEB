@@ -174,8 +174,8 @@ export default function Navbar({ cartCount: propCartCount }) {
             {/* 1. Home */}
             <SafeLink
               to="/"
-              className={`text-xs uppercase tracking-widest font-bold py-2 relative group transition-colors ${
-                location.pathname === '/' ? 'text-[#8C6214] font-black' : 'text-[#382B1D] hover:text-[#A8791E]'
+              className={`royal-nav-link text-xs uppercase tracking-widest font-bold py-2 relative group transition-colors ${
+                location.pathname === '/' ? 'active-link font-black !text-[#8C6214]' : '!text-[#2D2115] hover:!text-[#A8791E]'
               }`}
             >
               <span>Home</span>
@@ -189,10 +189,10 @@ export default function Navbar({ cartCount: propCartCount }) {
             {/* 2. Shop (All Collections) */}
             <SafeLink
               to="/shop"
-              className={`text-xs uppercase tracking-widest font-bold py-2 relative group transition-colors ${
+              className={`royal-nav-link text-xs uppercase tracking-widest font-bold py-2 relative group transition-colors ${
                 location.pathname === '/shop' && !currentSortParam && !currentCategoryParam
-                  ? 'text-[#8C6214] font-black'
-                  : 'text-[#382B1D] hover:text-[#A8791E]'
+                  ? 'active-link font-black !text-[#8C6214]'
+                  : '!text-[#2D2115] hover:!text-[#A8791E]'
               }`}
             >
               <span>Shop</span>
@@ -208,8 +208,8 @@ export default function Navbar({ cartCount: propCartCount }) {
             {/* 3. New Arrivals (Crucial E-Commerce Feature with Animated Badge) */}
             <SafeLink
               to="/shop?sort=newest"
-              className={`flex items-center gap-1.5 text-xs uppercase tracking-widest font-bold py-2 relative group transition-colors ${
-                currentSortParam === 'newest' ? 'text-[#8C6214] font-black' : 'text-[#382B1D] hover:text-[#A8791E]'
+              className={`royal-nav-link flex items-center gap-1.5 text-xs uppercase tracking-widest font-bold py-2 relative group transition-colors ${
+                currentSortParam === 'newest' ? 'active-link font-black !text-[#8C6214]' : '!text-[#2D2115] hover:!text-[#A8791E]'
               }`}
             >
               <span>New In</span>
@@ -231,10 +231,10 @@ export default function Navbar({ cartCount: propCartCount }) {
             >
               <SafeLink
                 to="/categories"
-                className={`flex items-center gap-1 text-xs uppercase tracking-widest font-bold py-2 relative group transition-colors ${
+                className={`royal-nav-link flex items-center gap-1 text-xs uppercase tracking-widest font-bold py-2 relative group transition-colors ${
                   location.pathname === '/categories' || (currentCategoryParam && location.pathname === '/shop')
-                    ? 'text-[#8C6214] font-black'
-                    : 'text-[#382B1D] hover:text-[#A8791E]'
+                    ? 'active-link font-black !text-[#8C6214]'
+                    : '!text-[#2D2115] hover:!text-[#A8791E]'
                 }`}
               >
                 <span>Categories</span>
@@ -305,8 +305,8 @@ export default function Navbar({ cartCount: propCartCount }) {
             {/* 5. Trending / Best Sellers */}
             <SafeLink
               to="/shop?sort=trending"
-              className={`flex items-center gap-1 text-xs uppercase tracking-widest font-bold py-2 relative group transition-colors ${
-                currentSortParam === 'trending' ? 'text-[#8C6214] font-black' : 'text-[#382B1D] hover:text-[#A8791E]'
+              className={`royal-nav-link flex items-center gap-1 text-xs uppercase tracking-widest font-bold py-2 relative group transition-colors ${
+                currentSortParam === 'trending' ? 'active-link font-black !text-[#8C6214]' : '!text-[#2D2115] hover:!text-[#A8791E]'
               }`}
             >
               <TrendingUp size={13} className="text-[#C9972C] group-hover:scale-110 transition-transform" />

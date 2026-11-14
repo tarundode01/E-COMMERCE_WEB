@@ -123,6 +123,36 @@ html.dark header.royal-customer-header {
   color: #241A10 !important;
 }
 
+/* Ensure customer header navigation links (Home, Shop, New In, Categories, Trending)
+   always have supreme contrast and crystal-clear visibility in both light and dark modes */
+html.dark header.royal-customer-header nav a,
+html.dark header.royal-customer-header nav button,
+html.dark header.royal-customer-header .royal-nav-link {
+  color: #2D2115 !important;
+}
+
+html.dark header.royal-customer-header nav a:hover,
+html.dark header.royal-customer-header nav button:hover,
+html.dark header.royal-customer-header .royal-nav-link:hover {
+  color: #A8791E !important;
+}
+
+html.dark header.royal-customer-header nav a.active-link,
+html.dark header.royal-customer-header .royal-nav-link.active-link {
+  color: #8C6214 !important;
+  font-weight: 900 !important;
+}
+
+/* Sub-header category pills inside royal customer header */
+html.dark header.royal-customer-header .bg-white,
+html.dark header.royal-customer-header .bg-white\/80,
+html.dark header.royal-customer-header .bg-white\/70,
+html.dark header.royal-customer-header .bg-white\/90 {
+  background-color: #FFFFFF !important;
+  color: #2D2115 !important;
+  border-color: rgba(216, 196, 158, 0.8) !important;
+}
+
 /* Deep Obsidian Surfaces & Cards */
 html.dark .bg-white {
   background-color: var(--color-brand-surface) !important;
@@ -340,14 +370,19 @@ html.dark .bg-brand-black\/70 {
 }
 
 /* ==========================================================================
-   NAVIGATION MENU & DROPDOWN READABILITY IN DARK MODE
+   NAVIGATION MENU & DROPDOWN READABILITY IN DARK MODE (Dedicated SaaS & Admin Suites)
+   Scoped to non-customer headers to preserve royal customer palette
    ========================================================================== */
-html.dark nav a,
-html.dark nav button {
+html.dark header:not(.royal-customer-header) nav a,
+html.dark header:not(.royal-customer-header) nav button,
+html.dark aside nav a,
+html.dark aside nav button {
   color: #E5E7EB;
 }
-html.dark nav a:hover,
-html.dark nav button:hover {
+html.dark header:not(.royal-customer-header) nav a:hover,
+html.dark header:not(.royal-customer-header) nav button:hover,
+html.dark aside nav a:hover,
+html.dark aside nav button:hover {
   color: var(--color-brand-accent);
 }
 
